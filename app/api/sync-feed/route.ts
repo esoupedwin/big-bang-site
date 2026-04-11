@@ -18,7 +18,7 @@ export async function GET() {
     if (!guid) continue;
 
     const result = await sql`
-      INSERT INTO feed_items (guid, title, link, pub_date, snippet)
+      INSERT INTO feed_entries (guid, title, link, pub_date, snippet)
       VALUES (
         ${guid},
         ${item.title ?? null},

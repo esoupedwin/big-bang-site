@@ -1,59 +1,64 @@
 import { sql } from "@/lib/db";
 
-type FeedItem = {
-  id: number;
+type FeedEntry = {
+  id: string;
+  feed_name: string;
   title: string | null;
   link: string | null;
-  pub_date: string | null;
-  snippet: string | null;
-  synced_at: string | null;
+  summary: string | null;
+  author: string | null;
+  published_at: string | null;
 };
 
-async function getFeedItems(): Promise<FeedItem[]> {
-  const rows = await sql<FeedItem[]>`
-    SELECT id, title, link, pub_date, snippet, synced_at
-    FROM feed_items
-    ORDER BY pub_date ASC
+async function getFeedEntries(): Promise<FeedEntry[]> {
+  const rows = await sql<FeedEntry[]>`
+    SELECT id, feed_name, title, link, summary, author, published_at
+    FROM feed_entries
+    ORDER BY published_at DESC NULLS LAST
   `;
   return rows;
 }
 
 export default async function Home() {
-  const items = await getFeedItems();
+  const entries = await getFeedEntries();
 
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">BBC News</h1>
+        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">News Feed</h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
-          {items.length} articles stored · oldest first
+          {entries.length} articles · newest first
         </p>
 
-        {items.length === 0 ? (
-          <p className="text-zinc-500 dark:text-zinc-400">
-            No articles yet. The sync runs every hour, or trigger it manually at{" "}
-            <code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 rounded">
-              /api/sync-feed
-            </code>
-            .
-          </p>
+        {entries.length === 0 ? (
+          <p className="text-zinc-500 dark:text-zinc-400">No articles yet.</p>
         ) : (
           <ol className="space-y-6">
-            {items.map((item) => (
-              <li key={item.id} className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">
-                  {item.pub_date ? new Date(item.pub_date).toLocaleString() : ""}
-                </p>
+            {entries.map((entry) => (
+              <li key={entry.id} className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                    {entry.feed_name}
+                  </span>
+                  {entry.published_at && (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {new Date(entry.published_at).toLocaleString()}
+                    </span>
+                  )}
+                </div>
                 <a
-                  href={item.link ?? "#"}
+                  href={entry.link ?? "#"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-lg font-semibold text-zinc-900 dark:text-white hover:underline"
                 >
-                  {item.title}
+                  {entry.title}
                 </a>
-                {item.snippet && (
-                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{item.snippet}</p>
+                {entry.author && (
+                  <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">{entry.author}</p>
+                )}
+                {entry.summary && (
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{entry.summary}</p>
                 )}
               </li>
             ))}

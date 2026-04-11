@@ -8,14 +8,17 @@ export const sql = neon(process.env.DATABASE_URL);
 
 export async function initDb() {
   await sql`
-    CREATE TABLE IF NOT EXISTS feed_items (
-      id        SERIAL PRIMARY KEY,
-      guid      TEXT UNIQUE NOT NULL,
-      title     TEXT,
-      link      TEXT,
-      pub_date  TIMESTAMPTZ,
-      snippet   TEXT,
-      synced_at TIMESTAMPTZ DEFAULT NOW()
+    CREATE TABLE IF NOT EXISTS feed_entries (
+      id          BIGSERIAL PRIMARY KEY,
+      feed_name   TEXT NOT NULL,
+      feed_url    TEXT NOT NULL,
+      guid        TEXT UNIQUE NOT NULL,
+      title       TEXT,
+      link        TEXT,
+      summary     TEXT,
+      author      TEXT,
+      published_at TIMESTAMPTZ,
+      fetched_at  TIMESTAMPTZ DEFAULT NOW()
     )
   `;
 }

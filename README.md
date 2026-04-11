@@ -21,7 +21,7 @@ A Next.js web application that syncs the BBC News RSS feed into a Neon Postgres 
 
 The application has two responsibilities:
 
-1. **Display** — The main page (`/`) queries `feed_items` from Neon Postgres and renders articles in chronological order.
+1. **Display** — The main page (`/`) queries `feed_entries` from Neon Postgres and renders articles in chronological order.
 2. **Sync** — The API route `/api/sync-feed` fetches the BBC News RSS feed and upserts each article into the database. On Vercel this runs automatically every hour via a cron job.
 
 ---
@@ -92,7 +92,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Seed the database
 
-The `feed_items` table is created automatically on the first sync. Trigger a manual sync by visiting:
+The `feed_entries` table is created automatically on the first sync. Trigger a manual sync by visiting:
 
 ```
 http://localhost:3000/api/sync-feed
@@ -122,7 +122,7 @@ The response will confirm how many articles were inserted and how many were skip
 
 **Behaviour:**
 - Fetches all current items from the BBC News RSS feed.
-- Upserts each item into the `feed_items` table using `ON CONFLICT (guid) DO NOTHING` to prevent duplicates.
+- Upserts each item into the `feed_entries` table using `ON CONFLICT (guid) DO NOTHING` to prevent duplicates.
 - Returns a JSON summary: `{ inserted, skipped, total }`.
 
 **Schedule:** Runs automatically every hour on Vercel (configured in `vercel.json`).
@@ -131,7 +131,7 @@ The response will confirm how many articles were inserted and how many were skip
 
 ## Database Schema
 
-Table: **`feed_items`**
+Table: **`feed_entries`**
 
 | Column | Type | Description |
 |---|---|---|
