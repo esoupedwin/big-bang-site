@@ -8,8 +8,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "BBC News",
-  description: "Latest BBC News articles",
+  title: "BIG BANG",
+  description: "Latest news articles",
 };
 
 export default function RootLayout({
