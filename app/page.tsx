@@ -11,12 +11,12 @@ type FeedEntry = {
 };
 
 async function getFeedEntries(): Promise<FeedEntry[]> {
-  const rows = await sql<FeedEntry[]>`
+  const rows = await sql`
     SELECT id, feed_name, title, link, summary, author, published_at
     FROM feed_entries
     ORDER BY published_at DESC NULLS LAST
   `;
-  return rows;
+  return rows as FeedEntry[];
 }
 
 export default async function Home() {
