@@ -65,8 +65,15 @@ export default async function Home({
                   {entry.author && (
                     <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">{entry.author}</p>
                   )}
-                  {entry.summary && (
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{entry.summary}</p>
+                  {(entry.summary || entry.gist) && (
+                    <div className="mt-1 space-y-1">
+                      {entry.summary && (
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">{entry.summary}</p>
+                      )}
+                      {entry.gist && (
+                        <p className="text-sm text-zinc-500 dark:text-zinc-500">{entry.gist}</p>
+                      )}
+                    </div>
                   )}
                   {entry.tags && entry.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">

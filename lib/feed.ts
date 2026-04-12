@@ -11,6 +11,7 @@ export type FeedEntry = {
   author: string | null;
   published_at: string | null;
   tags: string[] | null;
+  gist: string | null;
 };
 
 export async function getAllTags(): Promise<string[]> {
@@ -30,14 +31,14 @@ export async function getFeedEntries(
   const [entries, countResult] = await Promise.all([
     filtering
       ? sql`
-          SELECT id, feed_name, title, link, summary, author, published_at, tags
+          SELECT id, feed_name, title, link, summary, gist, author, published_at, tags
           FROM feed_entries
           WHERE tags && ${selectedTags}
           ORDER BY published_at DESC NULLS LAST
           LIMIT ${PAGE_SIZE} OFFSET ${offset}
         `
       : sql`
-          SELECT id, feed_name, title, link, summary, author, published_at, tags
+          SELECT id, feed_name, title, link, summary, gist, author, published_at, tags
           FROM feed_entries
           ORDER BY published_at DESC NULLS LAST
           LIMIT ${PAGE_SIZE} OFFSET ${offset}
