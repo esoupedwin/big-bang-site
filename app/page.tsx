@@ -3,6 +3,7 @@ import { getAllTags, getFeedEntries, PAGE_SIZE } from "@/lib/feed";
 import { CollapsibleText } from "./components/CollapsibleText";
 import { MiscToggle } from "./components/MiscToggle";
 import { PageNav } from "./components/PageNav";
+import { SynthesisPanel } from "./components/SynthesisPanel";
 import { TagFilter } from "./components/TagFilter";
 
 export default async function Home({
@@ -40,6 +41,8 @@ export default async function Home({
             <MiscToggle />
           </Suspense>
         </div>
+
+        <SynthesisPanel entries={entries.map(({ title, summary, gist }) => ({ title, summary, gist }))} />
 
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-4 mb-6">
           {total > 0 ? `${start}–${end} of ${total} articles` : "No articles found."}
