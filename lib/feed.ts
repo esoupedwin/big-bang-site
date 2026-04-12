@@ -61,8 +61,14 @@ export async function getFeedEntries(
     `,
   ]);
 
+  const deduped = (entries as FeedEntry[]).map((e) => ({
+    ...e,
+    geo_tags: e.geo_tags ? [...new Set(e.geo_tags)] : e.geo_tags,
+    topic_tags: e.topic_tags ? [...new Set(e.topic_tags)] : e.topic_tags,
+  }));
+
   return {
-    entries: entries as FeedEntry[],
+    entries: deduped,
     total: Number((countResult[0] as { count: string }).count),
   };
 }
