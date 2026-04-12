@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { SYNTHESIS_SYSTEM_PROMPT } from "@/lib/prompts";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
@@ -14,11 +15,26 @@ type EntryInput = {
 };
 
 export async function POST(req: NextRequest) {
-  const { entries }: { entries: EntryInput[] } = await req.json();
+  const {
+    entries,
+    selectedGeoTags = [],
+    selectedTopicTags = [],
+  }: { entries: EntryInput[]; selectedGeoTags: string[]; selectedTopicTags: string[] } =
+    await req.json();
 
   if (!entries?.length) {
     return NextResponse.json({ error: "No entries provided" }, { status: 400 });
   }
+
+  const focusParts = [
+    selectedGeoTags.length > 0 ? `Geography: ${selectedGeoTags.join(", ")}` : null,
+    selectedTopicTags.length > 0 ? `Topics: ${selectedTopicTags.join(", ")}` : null,
+  ].filter(Boolean);
+
+  const focusLine =
+    focusParts.length > 0
+      ? `Analytical focus: ${focusParts.join(" | ")}\n\n`
+      : "";
 
   const articleList = entries
     .map((e, i) => {
@@ -32,12 +48,11 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "system",
-        content:
-          "You are an expert geopolitical analyst. Given a set of news articles, produce a concise, insightful synthesis of the key developments, patterns, and implications. Write in clear prose — no bullet points. Focus on what the articles collectively reveal rather than summarising each one individually.",
+        content: SYNTHESIS_SYSTEM_PROMPT,
       },
       {
         role: "user",
-        content: `Based on the following ${entries.length} articles, provide a geopolitical synthesis:\n\n${articleList}`,
+        content: `${focusLine}Based on the following ${entries.length} articles, provide a geopolitical synthesis:\n\n${articleList}`,
       },
     ],
     stream: true,

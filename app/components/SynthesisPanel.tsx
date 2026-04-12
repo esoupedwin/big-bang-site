@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 type EntryInput = {
   title: string | null;
@@ -8,7 +9,13 @@ type EntryInput = {
   gist: string | null;
 };
 
-export function SynthesisPanel({ entries }: { entries: EntryInput[] }) {
+type Props = {
+  entries: EntryInput[];
+  selectedGeoTags: string[];
+  selectedTopicTags: string[];
+};
+
+export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: Props) {
   const [synthesis, setSynthesis] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +29,7 @@ export function SynthesisPanel({ entries }: { entries: EntryInput[] }) {
       const res = await fetch("/api/synthesize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entries }),
+        body: JSON.stringify({ entries, selectedGeoTags, selectedTopicTags }),
       });
 
       if (!res.ok) {
@@ -47,6 +54,13 @@ export function SynthesisPanel({ entries }: { entries: EntryInput[] }) {
     }
   }
 
+  const focusLabel = [
+    selectedGeoTags.length > 0 ? `Geography: ${selectedGeoTags.join(", ")}` : null,
+    selectedTopicTags.length > 0 ? `Topics: ${selectedTopicTags.join(", ")}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <div className="mt-4">
       <button
@@ -63,12 +77,15 @@ export function SynthesisPanel({ entries }: { entries: EntryInput[] }) {
 
       {synthesis && (
         <div className="mt-3 p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2">
+          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-1">
             Geopolitical Synthesis · {entries.length} articles
           </p>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
-            {synthesis}
-          </p>
+          {focusLabel && (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">{focusLabel}</p>
+          )}
+          <div className="synthesis-prose prose prose-zinc dark:prose-invert max-w-none">
+            <ReactMarkdown>{synthesis}</ReactMarkdown>
+          </div>
         </div>
       )}
     </div>

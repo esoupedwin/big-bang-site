@@ -42,7 +42,11 @@ export default async function Home({
           </Suspense>
         </div>
 
-        <SynthesisPanel entries={entries.map(({ title, summary, gist }) => ({ title, summary, gist }))} />
+        <SynthesisPanel
+          entries={entries.map(({ title, summary, gist }) => ({ title, summary, gist }))}
+          selectedGeoTags={selectedGeoTags}
+          selectedTopicTags={selectedTopicTags}
+        />
 
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-4 mb-6">
           {total > 0 ? `${start}–${end} of ${total} articles` : "No articles found."}
