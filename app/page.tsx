@@ -1,20 +1,24 @@
 import { Suspense } from "react";
 import { getAllTags, getFeedEntries, PAGE_SIZE } from "@/lib/feed";
+import { CollapsibleText } from "./components/CollapsibleText";
+import { MiscToggle } from "./components/MiscToggle";
 import { PageNav } from "./components/PageNav";
 import { TagFilter } from "./components/TagFilter";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; tags?: string | string[] }>;
+  searchParams: Promise<{ page?: string; geo?: string | string[]; topic?: string | string[]; show_misc?: string }>;
 }) {
-  const { page: pageParam, tags: tagsParam } = await searchParams;
+  const { page: pageParam, geo, topic, show_misc } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
-  const selectedTags = [tagsParam ?? []].flat().filter(Boolean) as string[];
+  const selectedGeoTags = [geo ?? []].flat().filter(Boolean) as string[];
+  const selectedTopicTags = [topic ?? []].flat().filter(Boolean) as string[];
+  const showMisc = show_misc === "1";
 
-  const [allTags, { entries, total }] = await Promise.all([
+  const [{ geoTags, topicTags }, { entries, total }] = await Promise.all([
     getAllTags(),
-    getFeedEntries(page, selectedTags),
+    getFeedEntries(page, selectedGeoTags, selectedTopicTags, showMisc),
   ]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -28,8 +32,14 @@ export default async function Home({
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">News Feed</h1>
 
         <Suspense>
-          <TagFilter allTags={allTags} />
+          <TagFilter geoTags={geoTags} topicTags={topicTags} />
         </Suspense>
+
+        <div className="mt-4">
+          <Suspense>
+            <MiscToggle />
+          </Suspense>
+        </div>
 
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-4 mb-6">
           {total > 0 ? `${start}–${end} of ${total} articles` : "No articles found."}
@@ -39,7 +49,13 @@ export default async function Home({
           <p className="text-zinc-500 dark:text-zinc-400">No articles found.</p>
         ) : (
           <>
-            <PageNav page={currentPage} totalPages={totalPages} selectedTags={selectedTags} />
+            <PageNav
+              page={currentPage}
+              totalPages={totalPages}
+              selectedGeoTags={selectedGeoTags}
+              selectedTopicTags={selectedTopicTags}
+              showMisc={showMisc}
+            />
 
             <ol className="space-y-6 mt-8">
               {entries.map((entry) => (
@@ -68,28 +84,45 @@ export default async function Home({
                   {(entry.summary || entry.gist) && (
                     <div className="mt-1 space-y-1">
                       {entry.summary && (
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400">{entry.summary}</p>
+                        <CollapsibleText
+                          text={entry.summary}
+                          className="text-sm text-zinc-600 dark:text-zinc-400"
+                        />
                       )}
                       {entry.gist && (
-                        <p className="text-sm text-zinc-500 dark:text-zinc-500">{entry.gist}</p>
+                        <CollapsibleText
+                          text={entry.gist}
+                          className="text-sm text-zinc-500 dark:text-zinc-500"
+                        />
                       )}
                     </div>
                   )}
-                  {entry.tags && entry.tags.length > 0 && (
+                  {(entry.geo_tags?.length || entry.topic_tags?.length) ? (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {entry.tags.map((tag) => (
+                      {entry.geo_tags?.map((tag) => (
+                        <span key={tag} className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                      {entry.topic_tags?.map((tag) => (
                         <span key={tag} className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
                           {tag}
                         </span>
                       ))}
                     </div>
-                  )}
+                  ) : null}
                 </li>
               ))}
             </ol>
 
             <div className="mt-10">
-              <PageNav page={currentPage} totalPages={totalPages} selectedTags={selectedTags} />
+              <PageNav
+                page={currentPage}
+                totalPages={totalPages}
+                selectedGeoTags={selectedGeoTags}
+                selectedTopicTags={selectedTopicTags}
+                showMisc={showMisc}
+              />
             </div>
           </>
         )}

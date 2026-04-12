@@ -2,42 +2,71 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-export function TagFilter({ allTags }: { allTags: string[] }) {
+type Props = {
+  geoTags: string[];
+  topicTags: string[];
+};
+
+const activeClass =
+  "bg-zinc-800 text-white border-zinc-800 dark:bg-white dark:text-zinc-900 dark:border-white";
+const inactiveClass =
+  "bg-white text-zinc-600 border-zinc-300 hover:border-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500";
+const pillBase = "text-xs font-medium px-3 py-1 rounded-full border transition-colors cursor-pointer";
+
+export function TagFilter({ geoTags, topicTags }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedTags = searchParams.getAll("tags");
+  const selectedGeo = searchParams.getAll("geo");
+  const selectedTopic = searchParams.getAll("topic");
 
-  function toggleTag(tag: string) {
+  function toggle(param: "geo" | "topic", value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (selectedTags.includes(tag)) {
-      const remaining = selectedTags.filter((t) => t !== tag);
-      params.delete("tags");
-      remaining.forEach((t) => params.append("tags", t));
+    const current = params.getAll(param);
+    params.delete(param);
+    if (current.includes(value)) {
+      current.filter((v) => v !== value).forEach((v) => params.append(param, v));
     } else {
-      params.append("tags", tag);
+      [...current, value].forEach((v) => params.append(param, v));
     }
     params.delete("page");
     router.push(`/?${params.toString()}`);
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {allTags.map((tag) => {
-        const active = selectedTags.includes(tag);
-        return (
-          <button
-            key={tag}
-            onClick={() => toggleTag(tag)}
-            className={`text-xs font-medium px-3 py-1 rounded-full border transition-colors cursor-pointer ${
-              active
-                ? "bg-zinc-800 text-white border-zinc-800 dark:bg-white dark:text-zinc-900 dark:border-white"
-                : "bg-white text-zinc-600 border-zinc-300 hover:border-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500"
-            }`}
-          >
-            {tag}
-          </button>
-        );
-      })}
+    <div className="space-y-3">
+      <div>
+        <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2">
+          Geography
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {geoTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => toggle("geo", tag)}
+              className={`${pillBase} ${selectedGeo.includes(tag) ? activeClass : inactiveClass}`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2">
+          Topics
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {topicTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => toggle("topic", tag)}
+              className={`${pillBase} ${selectedTopic.includes(tag) ? activeClass : inactiveClass}`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
