@@ -48,12 +48,12 @@ export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
       {(entry.geo_tags?.length || entry.topic_tags?.length) ? (
         <div className="flex flex-wrap gap-1 mt-2">
           {entry.geo_tags?.map((tag) => (
-            <span key={tag} className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-full">
+            <span key={`geo:${tag}`} className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-full">
               {tag}
             </span>
           ))}
           {entry.topic_tags?.map((tag) => (
-            <span key={tag} className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+            <span key={`topic:${tag}`} className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
               {tag}
             </span>
           ))}
