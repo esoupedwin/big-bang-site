@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { SYNTHESIS_SYSTEM_PROMPT } from "@/lib/prompts";
+import { buildFocusParts, SYNTHESIS_MODEL, SYNTHESIS_SYSTEM_PROMPT } from "@/lib/prompts";
+import { EntryInput } from "@/lib/types";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
 }
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-type EntryInput = {
-  title: string | null;
-  summary: string | null;
-  gist: string | null;
-};
 
 export async function POST(req: NextRequest) {
   const {
@@ -26,15 +21,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No entries provided" }, { status: 400 });
   }
 
-  const focusParts = [
-    selectedGeoTags.length > 0 ? `Geography: ${selectedGeoTags.join(", ")}` : null,
-    selectedTopicTags.length > 0 ? `Topics: ${selectedTopicTags.join(", ")}` : null,
-  ].filter(Boolean);
-
-  const focusLine =
-    focusParts.length > 0
-      ? `Analytical focus: ${focusParts.join(" | ")}\n\n`
-      : "";
+  const focusParts = buildFocusParts(selectedGeoTags, selectedTopicTags);
+  const focusLine = focusParts.length > 0
+    ? `Analytical focus: ${focusParts.join(" | ")}\n\n`
+    : "";
 
   const articleList = entries
     .map((e, i) => {
@@ -44,12 +34,9 @@ export async function POST(req: NextRequest) {
     .join("\n\n---\n\n");
 
   const stream = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: SYNTHESIS_MODEL,
     messages: [
-      {
-        role: "system",
-        content: SYNTHESIS_SYSTEM_PROMPT,
-      },
+      { role: "system", content: SYNTHESIS_SYSTEM_PROMPT },
       {
         role: "user",
         content: `${focusLine}Based on the following ${entries.length} articles, provide a geopolitical synthesis:\n\n${articleList}`,

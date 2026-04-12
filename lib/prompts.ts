@@ -1,3 +1,12 @@
+export const SYNTHESIS_MODEL = "gpt-5.4";
+
+export function buildFocusParts(geoTags: string[], topicTags: string[]): string[] {
+  return [
+    geoTags.length > 0 ? `Geography: ${geoTags.join(", ")}` : null,
+    topicTags.length > 0 ? `Topics: ${topicTags.join(", ")}` : null,
+  ].filter((v): v is string => v !== null);
+}
+
 export const SYNTHESIS_SYSTEM_PROMPT = `
 You are a geopolitical analyst supporting intelligence professionals.
 

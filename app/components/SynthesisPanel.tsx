@@ -2,12 +2,8 @@
 
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-
-type EntryInput = {
-  title: string | null;
-  summary: string | null;
-  gist: string | null;
-};
+import { buildFocusParts } from "@/lib/prompts";
+import { EntryInput } from "@/lib/types";
 
 type Props = {
   entries: EntryInput[];
@@ -54,12 +50,7 @@ export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: 
     }
   }
 
-  const focusLabel = [
-    selectedGeoTags.length > 0 ? `Geography: ${selectedGeoTags.join(", ")}` : null,
-    selectedTopicTags.length > 0 ? `Topics: ${selectedTopicTags.join(", ")}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const focusLabel = buildFocusParts(selectedGeoTags, selectedTopicTags).join(" · ");
 
   return (
     <div className="mt-4">

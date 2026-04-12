@@ -1,6 +1,7 @@
 import { sql } from "./db";
 
 export const PAGE_SIZE = 50;
+export const MISC_TAG = "Misc";
 
 export type FeedEntry = {
   id: string;
@@ -47,7 +48,7 @@ export async function getFeedEntries(
       FROM feed_entries
       WHERE (${skipGeo} OR geo_tags && ${geoParam})
         AND (${skipTopic} OR topic_tags && ${topicParam})
-        AND (${showMisc} OR topic_tags IS NULL OR topic_tags <> ARRAY['Misc']::text[])
+        AND (${showMisc} OR topic_tags IS NULL OR topic_tags <> ARRAY[${MISC_TAG}]::text[])
       ORDER BY published_at DESC NULLS LAST
       LIMIT ${PAGE_SIZE} OFFSET ${offset}
     `,
@@ -56,7 +57,7 @@ export async function getFeedEntries(
       FROM feed_entries
       WHERE (${skipGeo} OR geo_tags && ${geoParam})
         AND (${skipTopic} OR topic_tags && ${topicParam})
-        AND (${showMisc} OR topic_tags IS NULL OR topic_tags <> ARRAY['Misc']::text[])
+        AND (${showMisc} OR topic_tags IS NULL OR topic_tags <> ARRAY[${MISC_TAG}]::text[])
     `,
   ]);
 
