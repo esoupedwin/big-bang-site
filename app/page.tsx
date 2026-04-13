@@ -31,7 +31,7 @@ export default async function Home({
             <form action={googleSignIn}>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-black border border-zinc-700 rounded-lg hover:bg-zinc-900 transition-colors shadow-sm"
               >
                 <GoogleIcon />
                 Sign in with Google
