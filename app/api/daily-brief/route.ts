@@ -8,7 +8,7 @@ import {
   saveDailyBriefCache,
   appendDailyBriefHistory,
 } from "@/lib/brief";
-import { SYNTHESIS_MODEL, buildBriefSystemPrompt, buildDiffPrompt } from "@/lib/prompts";
+import { SYNTHESIS_MODEL, HEADLINE_MARKER, buildBriefSystemPrompt, buildDiffPrompt, buildHeadlinePrompt } from "@/lib/prompts";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
@@ -69,29 +69,28 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        let diffSummary: string | null = null;
-        if (previousCache?.content) {
-          const diffResponse = await openai.chat.completions.create({
+        const [diffSummary, headline] = await Promise.all([
+          previousCache?.content
+            ? openai.chat.completions.create({
+                model: SYNTHESIS_MODEL,
+                messages: [{ role: "user", content: buildDiffPrompt(previousCache.content, newContent, previousCache.generated_at, topic.label) }],
+                stream: false,
+              }).then((r) => r.choices[0]?.message?.content?.trim() ?? null)
+            : Promise.resolve(null),
+          openai.chat.completions.create({
             model: SYNTHESIS_MODEL,
-            messages: [
-              {
-                role: "user",
-                content: buildDiffPrompt(
-                  previousCache.content,
-                  newContent,
-                  previousCache.generated_at,
-                  topic.label
-                ),
-              },
-            ],
+            messages: [{ role: "user", content: buildHeadlinePrompt(newContent, topic.label) }],
             stream: false,
-          });
-          diffSummary = diffResponse.choices[0]?.message?.content?.trim() ?? null;
+          }).then((r) => r.choices[0]?.message?.content?.trim() ?? null),
+        ]);
+
+        if (headline) {
+          controller.enqueue(encoder.encode(`\n\n${HEADLINE_MARKER}${headline}`));
         }
 
         await Promise.all([
-          saveDailyBriefCache(topic.key, newContent, articleIds, diffSummary),
-          appendDailyBriefHistory(topic.key, newContent, articleIds, diffSummary),
+          saveDailyBriefCache(topic.key, newContent, articleIds, diffSummary, headline),
+          appendDailyBriefHistory(topic.key, newContent, articleIds, diffSummary, headline),
         ]);
       } finally {
         controller.close();

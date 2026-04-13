@@ -4,15 +4,31 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { CollapsibleBullet } from "./CollapsibleBullet";
 
+const HEADLINE_MARKER = "<!--BB_HEADLINE-->";
+
+function splitContent(raw: string): { bullets: string; headline: string | null } {
+  const idx = raw.indexOf(HEADLINE_MARKER);
+  if (idx === -1) return { bullets: raw, headline: null };
+  return {
+    bullets:  raw.slice(0, idx).trim(),
+    headline: raw.slice(idx + HEADLINE_MARKER.length).trim() || null,
+  };
+}
+
 type Props = {
-  topicKey:       string;
-  initialContent: string | null;
-  diffSummary:    string | null;
+  topicKey:        string;
+  initialContent:  string | null;
+  initialHeadline: string | null;
+  diffSummary:     string | null;
 };
 
-export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props) {
-  const [content, setContent] = useState(initialContent ?? "");
+export function DailyBriefPanel({ topicKey, initialContent, initialHeadline, diffSummary }: Props) {
+  const [rawContent, setRawContent] = useState(initialContent ?? "");
   const [loading, setLoading] = useState(!initialContent);
+
+  const { bullets, headline } = initialContent
+    ? { bullets: initialContent, headline: initialHeadline }
+    : splitContent(rawContent);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,7 +37,7 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
     const controller = new AbortController();
 
     async function fetchBrief() {
-      setContent("");
+      setRawContent("");
       setError("");
       setLoading(true);
 
@@ -43,7 +59,7 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          setContent((prev) => prev + decoder.decode(value, { stream: true }));
+          setRawContent((prev) => prev + decoder.decode(value, { stream: true }));
         }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
@@ -58,7 +74,7 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
     return () => { controller.abort(); };
   }, [initialContent]);
 
-  if (loading && !content) {
+  if (loading && !rawContent) {
     return (
       <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 mt-6">
         <span className="animate-pulse">Generating brief…</span>
@@ -72,6 +88,11 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
 
   return (
     <div className="mt-2 space-y-6">
+      {/* Witty headline */}
+      {headline && (
+        <p className="text-sm italic text-zinc-500 dark:text-zinc-400">{headline}</p>
+      )}
+
       {/* Diff section — shown when cached brief has a diff assessment */}
       {diffSummary && (
         <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-700 dark:text-zinc-300">
@@ -103,7 +124,7 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
           p: ({ children }) => <span>{children}</span>,
         }}
       >
-        {content}
+        {bullets}
       </ReactMarkdown>
       {loading && (
         <span className="inline-block w-1 h-4 ml-1 bg-zinc-400 dark:bg-zinc-500 animate-pulse" />

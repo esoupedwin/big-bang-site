@@ -64,6 +64,7 @@ export type DailyBriefCache = {
   article_ids:  string[];
   generated_at: string;
   diff_summary: string | null;
+  headline:     string | null;
 };
 
 export async function getDailyBriefEntries(topic: BriefTopic): Promise<FeedEntry[]> {
@@ -80,7 +81,7 @@ export async function getDailyBriefEntries(topic: BriefTopic): Promise<FeedEntry
 
 export async function getDailyBriefCache(topicKey: string): Promise<DailyBriefCache | null> {
   const rows = await sql`
-    SELECT topic_key, content, article_ids, generated_at, diff_summary
+    SELECT topic_key, content, article_ids, generated_at, diff_summary, headline
     FROM daily_brief_cache
     WHERE topic_key = ${topicKey}
   `;
@@ -91,15 +92,17 @@ export async function saveDailyBriefCache(
   topicKey:    string,
   content:     string,
   articleIds:  string[],
-  diffSummary: string | null
+  diffSummary: string | null,
+  headline:    string | null
 ): Promise<void> {
   await sql`
-    INSERT INTO daily_brief_cache (topic_key, content, article_ids, diff_summary)
-    VALUES (${topicKey}, ${content}, ${articleIds}, ${diffSummary})
+    INSERT INTO daily_brief_cache (topic_key, content, article_ids, diff_summary, headline)
+    VALUES (${topicKey}, ${content}, ${articleIds}, ${diffSummary}, ${headline})
     ON CONFLICT (topic_key) DO UPDATE
       SET content      = ${content},
           article_ids  = ${articleIds},
           diff_summary = ${diffSummary},
+          headline     = ${headline},
           generated_at = NOW()
   `;
 }
@@ -108,11 +111,12 @@ export async function appendDailyBriefHistory(
   topicKey:    string,
   content:     string,
   articleIds:  string[],
-  diffSummary: string | null
+  diffSummary: string | null,
+  headline:    string | null
 ): Promise<void> {
   await sql`
-    INSERT INTO daily_brief_history (topic_key, content, article_ids, article_count, diff_summary)
-    VALUES (${topicKey}, ${content}, ${articleIds}, ${articleIds.length}, ${diffSummary})
+    INSERT INTO daily_brief_history (topic_key, content, article_ids, article_count, diff_summary, headline)
+    VALUES (${topicKey}, ${content}, ${articleIds}, ${articleIds.length}, ${diffSummary}, ${headline})
   `;
 }
 

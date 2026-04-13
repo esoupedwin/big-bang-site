@@ -1,5 +1,13 @@
 export const SYNTHESIS_MODEL = "gpt-5.4";
 
+export const HEADLINE_MARKER = "<!--BB_HEADLINE-->";
+
+export function buildHeadlinePrompt(content: string, topicLabel: string): string {
+  return `Write a single witty, punchy headline for the following ${topicLabel} intelligence brief. Maximum 10 words. Think newspaper front page meets intelligence memo — sharp, clever, accurate. Output only the headline, no quotes, no full stop.
+
+${content}`;
+}
+
 export function buildDiffPrompt(oldContent: string, newContent: string, previousGeneratedAt: string, topicLabel: string): string {
   const dt = new Date(previousGeneratedAt).toLocaleString("en-GB", {
     day: "2-digit", month: "short", year: "numeric",

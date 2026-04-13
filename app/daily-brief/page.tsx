@@ -25,9 +25,10 @@ export default async function DailyBriefPage() {
         topic,
         entries,
         articleIds,
-        cachedContent: cacheHit ? cache.content      : null,
-        cachedDiff:    cacheHit ? cache.diff_summary  : null,
-        cachedAt:      cacheHit ? cache.generated_at  : null,
+        cachedContent:  cacheHit ? cache.content      : null,
+        cachedDiff:     cacheHit ? cache.diff_summary  : null,
+        cachedAt:       cacheHit ? cache.generated_at  : null,
+        cachedHeadline: cacheHit ? cache.headline      : null,
       };
     })
   );
@@ -36,7 +37,7 @@ export default async function DailyBriefPage() {
     <main className="min-h-[220vh] bg-white dark:bg-zinc-950 px-4 pt-10 pb-48">
       <div className="max-w-2xl mx-auto space-y-12">
 
-        {topicData.map(({ topic, entries, cachedContent, cachedDiff, cachedAt }, idx) => (
+        {topicData.map(({ topic, entries, cachedContent, cachedDiff, cachedAt, cachedHeadline }, idx) => (
           <section key={topic.key}>
             {/* Divider between topics */}
             {idx > 0 && (
@@ -83,6 +84,7 @@ export default async function DailyBriefPage() {
                 <DailyBriefPanel
                   topicKey={topic.key}
                   initialContent={cachedContent}
+                  initialHeadline={cachedHeadline}
                   diffSummary={cachedDiff}
                 />
               </>
