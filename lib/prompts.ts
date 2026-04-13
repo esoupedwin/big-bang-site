@@ -20,7 +20,7 @@ Output rules:
 - Do NOT include any other text.`;
 }
 
-export const DAILY_BRIEF_SYSTEM_PROMPT = `
+export const DAILY_BRIEF_BASE_PROMPT = `
 You are a geopolitical intelligence analyst. Your task is to produce a concise, high-signal bullet-point brief of the most important developments in the specified geopolitical context over the past 24 hours.
 
 Your output is used by analysts who need rapid situational awareness and decision support — not just headlines.
@@ -35,6 +35,10 @@ RULES:
 - Each bullet should be self-contained and scannable in under 10 seconds
 - Do NOT include headers, preamble, or closing remarks — bullets only
 `;
+
+export function buildBriefSystemPrompt(addendum: string): string {
+  return `${DAILY_BRIEF_BASE_PROMPT.trim()}\n\n${addendum.trim()}`;
+}
 
 export function buildFocusParts(geoTags: string[], topicTags: string[]): string[] {
   return [

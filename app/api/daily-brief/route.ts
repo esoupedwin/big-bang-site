@@ -8,7 +8,7 @@ import {
   saveDailyBriefCache,
   appendDailyBriefHistory,
 } from "@/lib/brief";
-import { SYNTHESIS_MODEL, DAILY_BRIEF_SYSTEM_PROMPT, buildDiffPrompt } from "@/lib/prompts";
+import { SYNTHESIS_MODEL, buildBriefSystemPrompt, buildDiffPrompt } from "@/lib/prompts";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   const stream = await openai.chat.completions.create({
     model: SYNTHESIS_MODEL,
     messages: [
-      { role: "system", content: DAILY_BRIEF_SYSTEM_PROMPT },
+      { role: "system", content: buildBriefSystemPrompt(topic.systemPromptAddendum) },
       {
         role: "user",
         content: `Context: ${topic.label}\n\nHere are ${entries.length} articles from the past 24 hours:\n\n${articleList}`,
