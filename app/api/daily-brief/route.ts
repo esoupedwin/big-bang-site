@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import {
+  BRIEF_TOPICS,
   getDailyBriefEntries,
   getDailyBriefCache,
   saveDailyBriefCache,
   appendDailyBriefHistory,
-  DAILY_BRIEF_TOPIC_KEY,
 } from "@/lib/brief";
 import { SYNTHESIS_MODEL, DAILY_BRIEF_SYSTEM_PROMPT, buildDiffPrompt } from "@/lib/prompts";
 
@@ -16,13 +16,17 @@ if (!process.env.OPENAI_API_KEY) {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const topicKey = req.nextUrl.searchParams.get("topic") ?? "";
+  const topic = BRIEF_TOPICS.find((t) => t.key === topicKey);
+  if (!topic) return NextResponse.json({ error: "Unknown topic." }, { status: 400 });
+
   const [entries, previousCache] = await Promise.all([
-    getDailyBriefEntries(),
-    getDailyBriefCache(DAILY_BRIEF_TOPIC_KEY),
+    getDailyBriefEntries(topic),
+    getDailyBriefCache(topic.key),
   ]);
 
   if (!entries.length) {
@@ -33,7 +37,6 @@ export async function GET() {
   }
 
   const articleIds = entries.map((e) => String(e.id));
-
   const articleList = entries
     .map((e, i) => {
       const parts = [e.title, e.summary, e.gist].filter(Boolean).join("\n");
@@ -47,7 +50,7 @@ export async function GET() {
       { role: "system", content: DAILY_BRIEF_SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Here are ${entries.length} articles from the past 24 hours covering the US-Iran-Israel conflict:\n\n${articleList}`,
+        content: `Context: ${topic.label}\n\nHere are ${entries.length} articles from the past 24 hours:\n\n${articleList}`,
       },
     ],
     stream: true,
@@ -66,7 +69,6 @@ export async function GET() {
           }
         }
 
-        // Assess diff against previous brief (if one exists)
         let diffSummary: string | null = null;
         if (previousCache?.content) {
           const diffResponse = await openai.chat.completions.create({
@@ -74,7 +76,12 @@ export async function GET() {
             messages: [
               {
                 role: "user",
-                content: buildDiffPrompt(previousCache.content, newContent, previousCache.generated_at),
+                content: buildDiffPrompt(
+                  previousCache.content,
+                  newContent,
+                  previousCache.generated_at,
+                  topic.label
+                ),
               },
             ],
             stream: false,
@@ -83,8 +90,8 @@ export async function GET() {
         }
 
         await Promise.all([
-          saveDailyBriefCache(DAILY_BRIEF_TOPIC_KEY, newContent, articleIds, diffSummary),
-          appendDailyBriefHistory(DAILY_BRIEF_TOPIC_KEY, newContent, articleIds, diffSummary),
+          saveDailyBriefCache(topic.key, newContent, articleIds, diffSummary),
+          appendDailyBriefHistory(topic.key, newContent, articleIds, diffSummary),
         ]);
       } finally {
         controller.close();

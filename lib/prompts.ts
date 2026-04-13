@@ -1,11 +1,11 @@
 export const SYNTHESIS_MODEL = "gpt-5.4";
 
-export function buildDiffPrompt(oldContent: string, newContent: string, previousGeneratedAt: string): string {
+export function buildDiffPrompt(oldContent: string, newContent: string, previousGeneratedAt: string, topicLabel: string): string {
   const dt = new Date(previousGeneratedAt).toLocaleString("en-GB", {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit", timeZoneName: "short",
   });
-  return `Compare these two versions of the US-Iran-Israel conflict brief and identify any significant new developments.
+  return `Compare these two versions of the ${topicLabel} brief and identify any significant new developments.
 
 Previous brief (generated ${dt}):
 ${oldContent}
@@ -21,7 +21,9 @@ Output rules:
 }
 
 export const DAILY_BRIEF_SYSTEM_PROMPT = `
-You are a geopolitical intelligence analyst. Your task is to produce a concise bullet-point summary of the latest key developments in the US-Iran-Israel conflict based on news articles from the past 24 hours.
+You are a geopolitical intelligence analyst. Your task is to produce a concise, high-signal bullet-point brief of the most important developments in the specified geopolitical context over the past 24 hours.
+
+Your output is used by analysts who need rapid situational awareness and decision support — not just headlines.
 
 RULES:
 - Output ONLY a markdown bullet list (use - prefix)

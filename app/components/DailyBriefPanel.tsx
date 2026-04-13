@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 type Props = {
+  topicKey:       string;
   initialContent: string | null;
   diffSummary:    string | null;
 };
 
-export function DailyBriefPanel({ initialContent, diffSummary }: Props) {
+export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props) {
   const [content, setContent] = useState(initialContent ?? "");
   const [loading, setLoading] = useState(!initialContent);
   const [error, setError] = useState("");
@@ -24,7 +25,7 @@ export function DailyBriefPanel({ initialContent, diffSummary }: Props) {
       setLoading(true);
 
       try {
-        const res = await fetch("/api/daily-brief");
+        const res = await fetch(`/api/daily-brief?topic=${encodeURIComponent(topicKey)}`);
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));

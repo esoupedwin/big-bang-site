@@ -1,9 +1,27 @@
 import { sql } from "./db";
 import { FeedEntry } from "./feed";
 
-export const DAILY_BRIEF_GEO       = ["United States", "Iran", "Israel"];
-export const DAILY_BRIEF_TOPIC     = ["Bilateral Relations", "Military"];
-export const DAILY_BRIEF_TOPIC_KEY = "us-iran-israel";
+export type BriefTopic = {
+  key:       string;
+  label:     string;
+  geoTags:   string[];
+  topicTags: string[];
+};
+
+export const BRIEF_TOPICS: BriefTopic[] = [
+  {
+    key:       "us-iran-israel",
+    label:     "US · Iran · Israel",
+    geoTags:   ["United States", "Iran", "Israel"],
+    topicTags: ["Bilateral Relations", "Military"],
+  },
+  {
+    key:       "china-taiwan",
+    label:     "China · Taiwan",
+    geoTags:   ["China", "Taiwan"],
+    topicTags: ["Bilateral Relations", "Military"],
+  },
+];
 
 export type DailyBriefCache = {
   topic_key:    string;
@@ -13,13 +31,13 @@ export type DailyBriefCache = {
   diff_summary: string | null;
 };
 
-export async function getDailyBriefEntries(): Promise<FeedEntry[]> {
+export async function getDailyBriefEntries(topic: BriefTopic): Promise<FeedEntry[]> {
   const rows = await sql`
     SELECT id, feed_name, title, link, summary, gist, author, published_at, geo_tags, topic_tags
     FROM feed_entries
     WHERE published_at >= NOW() - INTERVAL '24 hours'
-      AND geo_tags   && ${DAILY_BRIEF_GEO}::text[]
-      AND topic_tags && ${DAILY_BRIEF_TOPIC}::text[]
+      AND geo_tags   && ${topic.geoTags}::text[]
+      AND topic_tags && ${topic.topicTags}::text[]
     ORDER BY published_at DESC
   `;
   return rows as FeedEntry[];
