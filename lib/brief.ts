@@ -43,8 +43,8 @@ TOPIC-SPECIFIC FOCUS — China · Taiwan:
   {
     key:       "ai-developments",
     label:     "AI Developments",
-    geoTags:   ["United States", "China", "European Union", "United Kingdom"],
-    topicTags: ["Technology", "Artificial Intelligence"],
+    geoTags:   ["United States", "China"],
+    topicTags: ["Transnational", "AI"],
     systemPromptAddendum: `
 TOPIC-SPECIFIC FOCUS — AI Developments:
 - Prioritise major model releases, capability breakthroughs, and benchmark results from frontier labs (OpenAI, Google DeepMind, Anthropic, Meta, xAI, Mistral, DeepSeek, Baidu)
