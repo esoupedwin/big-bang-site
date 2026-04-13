@@ -33,7 +33,7 @@ export default async function DailyBriefPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
+    <main className="min-h-[220vh] bg-white dark:bg-zinc-950 px-4 pt-10 pb-48">
       <div className="max-w-2xl mx-auto space-y-12">
 
         {topicData.map(({ topic, entries, cachedContent, cachedDiff, cachedAt }, idx) => (
