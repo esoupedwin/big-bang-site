@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { CollapsibleBullet } from "./CollapsibleBullet";
 
 type Props = {
   topicKey:       string;
@@ -96,12 +97,9 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
       <ReactMarkdown
         components={{
           ul: ({ children }) => <ul className="space-y-3">{children}</ul>,
-          li: ({ children }) => (
-            <li className="flex gap-3 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
-              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
-              <span>{children}</span>
-            </li>
-          ),
+          li: ({ node, children }) => node
+            ? <CollapsibleBullet node={node}>{children}</CollapsibleBullet>
+            : <li>{children}</li>,
           p: ({ children }) => <span>{children}</span>,
         }}
       >
