@@ -7,6 +7,7 @@ import { PageNav } from "./components/PageNav";
 import { SynthesisPanel } from "./components/SynthesisPanel";
 import { TagFilter } from "./components/TagFilter";
 import { googleSignIn } from "./actions/auth";
+import { AsciiAnimation } from "./components/AsciiAnimation";
 
 export default async function Home({
   searchParams,
@@ -17,21 +18,26 @@ export default async function Home({
 
   if (!session) {
     return (
-      <main className="flex-1 flex items-center justify-center bg-white dark:bg-zinc-950 px-4">
-        <div className="text-center max-w-sm">
-          <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-3">BIG BANG</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-8">
-            Geopolitical intelligence, synthesised from global news sources.
-          </p>
-          <form action={googleSignIn}>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
-            >
-              <GoogleIcon />
-              Sign in with Google
-            </button>
-          </form>
+      <main className="relative flex-1 overflow-hidden bg-white dark:bg-zinc-950">
+        <AsciiAnimation />
+        <div className="absolute inset-0 flex items-center justify-center px-4">
+          <div className="text-center max-w-sm">
+            <h1 className="text-5xl font-bold text-zinc-900 dark:text-white mb-3 tracking-tight">
+              BIG BANG
+            </h1>
+            <p className="text-zinc-500 dark:text-zinc-400 mb-8 text-sm">
+              Geopolitical intelligence, synthesised from global news sources.
+            </p>
+            <form action={googleSignIn}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+              >
+                <GoogleIcon />
+                Sign in with Google
+              </button>
+            </form>
+          </div>
         </div>
       </main>
     );
