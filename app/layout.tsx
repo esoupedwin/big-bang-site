@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { AuthHeader } from "./components/AuthHeader";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { AppNav } from "./components/AppNav";
+import { auth } from "@/lib/auth";
 import type { Theme } from "@/lib/preferences";
 import "./globals.css";
 
@@ -22,7 +24,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jar = await cookies();
+  const [jar, session] = await Promise.all([cookies(), auth()]);
   const theme = (jar.get("theme")?.value ?? "system") as Theme;
 
   // Apply dark class server-side to avoid flash on dark/light preferences.
@@ -43,6 +45,7 @@ export default async function RootLayout({
             </Suspense>
           </div>
         </header>
+        {session && <AppNav />}
         {children}
       </body>
     </html>
