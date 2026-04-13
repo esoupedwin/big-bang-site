@@ -11,11 +11,13 @@ export function AsciiAnimation() {
     const pre = preRef.current;
     if (!pre) return;
 
-    // Measure actual rendered character dimensions
+    // Measure actual rendered character advance width using multiple chars
     const probe = document.createElement("span");
-    probe.textContent = "X";
+    probe.textContent = "X".repeat(20);
     pre.appendChild(probe);
-    const { width: CHAR_W, height: CHAR_H } = probe.getBoundingClientRect();
+    const rect = probe.getBoundingClientRect();
+    const CHAR_W = rect.width / 20;
+    const CHAR_H = rect.height;
     pre.removeChild(probe);
 
     let animId: number;
