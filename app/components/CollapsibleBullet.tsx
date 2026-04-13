@@ -33,22 +33,22 @@ export function CollapsibleBullet({ node, children }: Props) {
   const headline = findHeadline(node);
 
   return (
-    <li className="flex gap-3 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
-      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
-      <span className="flex-1">
+    <li className="flex items-center gap-3 text-sm text-zinc-800 dark:text-zinc-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
+      <span className="flex-1 flex items-center gap-2">
         {headline ? (
           expanded ? (
-            <span>{children}</span>
+            <span className="leading-relaxed">{children}</span>
           ) : (
-            <span className="font-semibold text-zinc-900 dark:text-white">{headline}</span>
+            <span className="font-semibold text-zinc-900 dark:text-white leading-relaxed">{headline}</span>
           )
         ) : (
-          <span>{children}</span>
+          <span className="leading-relaxed">{children}</span>
         )}
         {headline && (
           <button
             onClick={() => setExpanded((prev) => !prev)}
-            className="ml-2 text-xs text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+            className="text-2xl text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors leading-none shrink-0"
             aria-label={expanded ? "Collapse" : "Expand"}
           >
             {expanded ? "−" : "+"}
