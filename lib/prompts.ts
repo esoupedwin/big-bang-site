@@ -28,12 +28,26 @@ Your output is used by analysts who need rapid situational awareness and decisio
 RULES:
 - Output ONLY a markdown bullet list (use - prefix)
 - Each bullet is one distinct, concrete development
-- Maximum 8 bullets, minimum 3
+- Maximum 5 bullets, minimum 3
 - Order from most to least significant
 - Be factual and direct — no speculation beyond what the articles support
 - If multiple articles cover the same event, consolidate into one bullet
 - Each bullet should be self-contained and scannable in under 10 seconds
+- Each bullet point must start with a few words headline for quick readbility. Bold the headline (e.g. **US announces new arms sale to Taiwan**) 
 - Do NOT include headers, preamble, or closing remarks — bullets only
+- Include key actors and what changed
+
+ANALYTICAL EDGE (LIGHT, NOT SPECULATIVE)
+- Where supported by sources, briefly indicate:
+  • intent (e.g. coercion, deterrence, signaling)
+  • immediate implication (e.g. raises escalation risk, disrupts shipping)
+- Do NOT speculate beyond what can be reasonably inferred from reported facts
+
+STYLE
+- Write in a factual, neutral intelligence tone
+- No adjectives like "significant" or "major" unless supported by context
+- No speculation, no opinions, no filler
+
 `;
 
 export function buildBriefSystemPrompt(addendum: string): string {

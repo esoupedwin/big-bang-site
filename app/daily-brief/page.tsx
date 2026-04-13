@@ -27,6 +27,7 @@ export default async function DailyBriefPage() {
         articleIds,
         cachedContent: cacheHit ? cache.content      : null,
         cachedDiff:    cacheHit ? cache.diff_summary  : null,
+        cachedAt:      cacheHit ? cache.generated_at  : null,
       };
     })
   );
@@ -35,7 +36,7 @@ export default async function DailyBriefPage() {
     <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
       <div className="max-w-2xl mx-auto space-y-12">
 
-        {topicData.map(({ topic, entries, cachedContent, cachedDiff }, idx) => (
+        {topicData.map(({ topic, entries, cachedContent, cachedDiff, cachedAt }, idx) => (
           <section key={topic.key}>
             {/* Divider between topics */}
             {idx > 0 && (
@@ -69,8 +70,14 @@ export default async function DailyBriefPage() {
                   <p className="text-xs text-zinc-400 dark:text-zinc-500">
                     Based on {entries.length} article{entries.length !== 1 ? "s" : ""} from the last 24 hours
                   </p>
-                  {cachedContent && (
-                    <span className="text-xs text-zinc-300 dark:text-zinc-600">· cached</span>
+                  {cachedContent && cachedAt && (
+                    <span className="text-xs text-zinc-300 dark:text-zinc-600">
+                      · cached {new Date(cachedAt).toLocaleString("en-GB", {
+                        day: "2-digit", month: "short",
+                        hour: "2-digit", minute: "2-digit",
+                        timeZoneName: "short",
+                      })}
+                    </span>
                   )}
                 </div>
                 <DailyBriefPanel
