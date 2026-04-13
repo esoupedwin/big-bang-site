@@ -101,8 +101,8 @@ export async function appendDailyBriefHistory(
 }
 
 export function isCacheValid(cache: DailyBriefCache, currentIds: string[]): boolean {
-  const a = [...cache.article_ids].sort();
-  const b = [...currentIds].sort();
-  if (a.length !== b.length) return false;
-  return a.every((id, i) => id === b[i]);
+  // Valid as long as no new articles have appeared since the last generation.
+  // Articles ageing out of the 24h rolling window do not require regeneration.
+  const cachedSet = new Set(cache.article_ids);
+  return currentIds.every((id) => cachedSet.has(id));
 }
