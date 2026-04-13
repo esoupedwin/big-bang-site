@@ -3,12 +3,18 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
-export function DailyBriefPanel() {
-  const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(true);
+type Props = {
+  initialContent: string | null;
+};
+
+export function DailyBriefPanel({ initialContent }: Props) {
+  const [content, setContent] = useState(initialContent ?? "");
+  const [loading, setLoading] = useState(!initialContent);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (initialContent) return; // cache hit — nothing to do
+
     let cancelled = false;
 
     async function fetchBrief() {
@@ -43,7 +49,7 @@ export function DailyBriefPanel() {
 
     fetchBrief();
     return () => { cancelled = true; };
-  }, []);
+  }, [initialContent]);
 
   if (loading && !content) {
     return (
@@ -58,23 +64,21 @@ export function DailyBriefPanel() {
   }
 
   return (
-    <div className="mt-6">
-      <ul className="space-y-3">
-        <ReactMarkdown
-          components={{
-            ul: ({ children }) => <ul className="space-y-3">{children}</ul>,
-            li: ({ children }) => (
-              <li className="flex gap-3 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
-                <span>{children}</span>
-              </li>
-            ),
-            p: ({ children }) => <span>{children}</span>,
-          }}
-        >
-          {content}
-        </ReactMarkdown>
-      </ul>
+    <div className="mt-2">
+      <ReactMarkdown
+        components={{
+          ul: ({ children }) => <ul className="space-y-3">{children}</ul>,
+          li: ({ children }) => (
+            <li className="flex gap-3 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
+              <span>{children}</span>
+            </li>
+          ),
+          p: ({ children }) => <span>{children}</span>,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
       {loading && (
         <span className="inline-block w-1 h-4 ml-1 bg-zinc-400 dark:bg-zinc-500 animate-pulse" />
       )}

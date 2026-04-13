@@ -1,14 +1,27 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getDailyBriefEntries } from "@/lib/brief";
-import { DAILY_BRIEF_GEO, DAILY_BRIEF_TOPIC } from "@/lib/brief";
+import {
+  getDailyBriefEntries,
+  getDailyBriefCache,
+  isCacheValid,
+  DAILY_BRIEF_GEO,
+  DAILY_BRIEF_TOPIC,
+  DAILY_BRIEF_TOPIC_KEY,
+} from "@/lib/brief";
 import { DailyBriefPanel } from "@/app/components/DailyBriefPanel";
 
 export default async function DailyBriefPage() {
   const session = await auth();
   if (!session) redirect("/");
 
-  const entries = await getDailyBriefEntries();
+  const [entries, cache] = await Promise.all([
+    getDailyBriefEntries(),
+    getDailyBriefCache(DAILY_BRIEF_TOPIC_KEY),
+  ]);
+
+  const articleIds = entries.map((e) => String(e.id));
+  const cachedContent =
+    cache && isCacheValid(cache, articleIds) ? cache.content : null;
 
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
@@ -40,10 +53,15 @@ export default async function DailyBriefPage() {
           </p>
         ) : (
           <>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4">
-              Based on {entries.length} article{entries.length !== 1 ? "s" : ""} from the last 24 hours
-            </p>
-            <DailyBriefPanel />
+            <div className="flex items-center gap-2 mb-4">
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                Based on {entries.length} article{entries.length !== 1 ? "s" : ""} from the last 24 hours
+              </p>
+              {cachedContent && (
+                <span className="text-xs text-zinc-300 dark:text-zinc-600">· cached</span>
+              )}
+            </div>
+            <DailyBriefPanel initialContent={cachedContent} />
           </>
         )}
 

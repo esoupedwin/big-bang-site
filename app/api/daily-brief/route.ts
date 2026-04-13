@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
-import { getDailyBriefEntries } from "@/lib/brief";
+import { getDailyBriefEntries, saveDailyBriefCache, DAILY_BRIEF_TOPIC_KEY } from "@/lib/brief";
 import { SYNTHESIS_MODEL, DAILY_BRIEF_SYSTEM_PROMPT } from "@/lib/prompts";
 
 if (!process.env.OPENAI_API_KEY) {
@@ -17,8 +17,13 @@ export async function GET() {
   const entries = await getDailyBriefEntries();
 
   if (!entries.length) {
-    return NextResponse.json({ error: "No articles found in the last 24 hours for this topic." }, { status: 404 });
+    return NextResponse.json(
+      { error: "No articles found in the last 24 hours for this topic." },
+      { status: 404 }
+    );
   }
+
+  const articleIds = entries.map((e) => String(e.id));
 
   const articleList = entries
     .map((e, i) => {
@@ -42,11 +47,17 @@ export async function GET() {
   const encoder = new TextEncoder();
   const readable = new ReadableStream({
     async start(controller) {
+      let fullText = "";
       try {
         for await (const chunk of stream) {
           const text = chunk.choices[0]?.delta?.content ?? "";
-          if (text) controller.enqueue(encoder.encode(text));
+          if (text) {
+            fullText += text;
+            controller.enqueue(encoder.encode(text));
+          }
         }
+        // Persist to cache once generation is complete
+        await saveDailyBriefCache(DAILY_BRIEF_TOPIC_KEY, fullText, articleIds);
       } finally {
         controller.close();
       }
