@@ -8,7 +8,7 @@ import {
   saveDailyBriefCache,
   appendDailyBriefHistory,
 } from "@/lib/brief";
-import { SYNTHESIS_MODEL, HEADLINE_MODEL, HEADLINE_MARKER, buildBriefSystemPrompt, buildDiffPrompt, buildHeadlinePrompt } from "@/lib/prompts";
+import { SYNTHESIS_MODEL, HEADLINE_MODEL, HEADLINE_MARKER, DIFF_MARKER, buildBriefSystemPrompt, buildDiffPrompt, buildHeadlinePrompt } from "@/lib/prompts";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
@@ -84,9 +84,10 @@ export async function GET(req: NextRequest) {
           }).then((r) => r.choices[0]?.message?.content?.trim() ?? null),
         ]);
 
-        if (headline) {
-          controller.enqueue(encoder.encode(`\n\n${HEADLINE_MARKER}${headline}`));
-        }
+        // Always stream both markers so the client knows when each section is ready.
+        // Diff marker: content if changed, empty if no previous brief or no change.
+        controller.enqueue(encoder.encode(`\n\n${DIFF_MARKER}${diffSummary ?? ""}`));
+        controller.enqueue(encoder.encode(`\n\n${HEADLINE_MARKER}${headline ?? ""}`));
 
         await Promise.all([
           saveDailyBriefCache(topic.key, newContent, articleIds, diffSummary, headline),

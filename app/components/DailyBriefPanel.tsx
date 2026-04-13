@@ -4,14 +4,47 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { CollapsibleBullet } from "./CollapsibleBullet";
 
-const HEADLINE_MARKER = "<!--BB_HEADLINE-->";
+function PendingIndicator({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500">
+      <span className="inline-flex gap-0.5 items-center">
+        <span className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:-0.3s]" />
+        <span className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:-0.15s]" />
+        <span className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce" />
+      </span>
+      <span>{label}</span>
+    </div>
+  );
+}
 
-function splitContent(raw: string): { bullets: string; headline: string | null } {
-  const idx = raw.indexOf(HEADLINE_MARKER);
-  if (idx === -1) return { bullets: raw, headline: null };
+const HEADLINE_MARKER = "<!--BB_HEADLINE-->";
+const DIFF_MARKER     = "<!--BB_DIFF-->";
+
+type Parsed = {
+  bullets:  string;
+  // undefined = marker not yet received (still generating)
+  // null      = marker received, no content
+  // string    = marker received with content
+  streamedDiff:     string | null | undefined;
+  streamedHeadline: string | null | undefined;
+};
+
+function parseStream(raw: string): Parsed {
+  const diffIdx = raw.indexOf(DIFF_MARKER);
+  if (diffIdx === -1) return { bullets: raw, streamedDiff: undefined, streamedHeadline: undefined };
+
+  const bullets   = raw.slice(0, diffIdx).trim();
+  const afterDiff = raw.slice(diffIdx + DIFF_MARKER.length);
+  const hlIdx     = afterDiff.indexOf(HEADLINE_MARKER);
+
+  if (hlIdx === -1) {
+    return { bullets, streamedDiff: afterDiff.trim() || null, streamedHeadline: undefined };
+  }
+
   return {
-    bullets:  raw.slice(0, idx).trim(),
-    headline: raw.slice(idx + HEADLINE_MARKER.length).trim() || null,
+    bullets,
+    streamedDiff:     afterDiff.slice(0, hlIdx).trim() || null,
+    streamedHeadline: afterDiff.slice(hlIdx + HEADLINE_MARKER.length).trim() || null,
   };
 }
 
@@ -26,9 +59,13 @@ export function DailyBriefPanel({ topicKey, initialContent, initialHeadline, dif
   const [rawContent, setRawContent] = useState(initialContent ?? "");
   const [loading, setLoading] = useState(!initialContent);
 
-  const { bullets, headline } = initialContent
-    ? { bullets: initialContent, headline: initialHeadline }
-    : splitContent(rawContent);
+  const { bullets, streamedDiff, streamedHeadline } = initialContent
+    ? { bullets: initialContent, streamedDiff: undefined, streamedHeadline: undefined }
+    : parseStream(rawContent);
+
+  // Cached path: use props directly. Fresh path: use parsed stream values.
+  const headline    = initialContent ? initialHeadline    : streamedHeadline;
+  const activeDiff  = initialContent ? diffSummary        : streamedDiff;
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -86,15 +123,22 @@ export function DailyBriefPanel({ topicKey, initialContent, initialHeadline, dif
     return <p className="mt-6 text-sm text-red-500 dark:text-red-400">{error}</p>;
   }
 
+  const showHeadlineSpinner = loading && !!bullets && headline === undefined;
+  const showDiffSpinner     = loading && !!bullets && streamedDiff === undefined && !initialContent;
+
   return (
     <div className="mt-2 space-y-6">
       {/* Witty headline */}
-      {headline && (
+      {showHeadlineSpinner ? (
+        <PendingIndicator label="Generating headline…" />
+      ) : headline ? (
         <p className="text-sm italic text-zinc-500 dark:text-zinc-400">{headline}</p>
-      )}
+      ) : null}
 
-      {/* Diff section — shown when cached brief has a diff assessment */}
-      {diffSummary && (
+      {/* Diff section */}
+      {showDiffSpinner ? (
+        <PendingIndicator label="Checking for changes…" />
+      ) : activeDiff ? (
         <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-700 dark:text-zinc-300">
           <ReactMarkdown
             components={{
@@ -109,10 +153,10 @@ export function DailyBriefPanel({ topicKey, initialContent, initialHeadline, dif
               ),
             }}
           >
-            {diffSummary}
+            {activeDiff}
           </ReactMarkdown>
         </div>
-      )}
+      ) : null}
 
       {/* Brief bullets */}
       <ReactMarkdown
