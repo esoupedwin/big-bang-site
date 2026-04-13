@@ -5,6 +5,7 @@ import {
   getDailyBriefEntries,
   getDailyBriefCache,
   saveDailyBriefCache,
+  appendDailyBriefHistory,
   DAILY_BRIEF_TOPIC_KEY,
 } from "@/lib/brief";
 import { SYNTHESIS_MODEL, DAILY_BRIEF_SYSTEM_PROMPT, buildDiffPrompt } from "@/lib/prompts";
@@ -81,7 +82,10 @@ export async function GET() {
           diffSummary = diffResponse.choices[0]?.message?.content?.trim() ?? null;
         }
 
-        await saveDailyBriefCache(DAILY_BRIEF_TOPIC_KEY, newContent, articleIds, diffSummary);
+        await Promise.all([
+          saveDailyBriefCache(DAILY_BRIEF_TOPIC_KEY, newContent, articleIds, diffSummary),
+          appendDailyBriefHistory(DAILY_BRIEF_TOPIC_KEY, newContent, articleIds, diffSummary),
+        ]);
       } finally {
         controller.close();
       }

@@ -51,6 +51,18 @@ export async function saveDailyBriefCache(
   `;
 }
 
+export async function appendDailyBriefHistory(
+  topicKey:    string,
+  content:     string,
+  articleIds:  string[],
+  diffSummary: string | null
+): Promise<void> {
+  await sql`
+    INSERT INTO daily_brief_history (topic_key, content, article_ids, article_count, diff_summary)
+    VALUES (${topicKey}, ${content}, ${articleIds}, ${articleIds.length}, ${diffSummary})
+  `;
+}
+
 export function isCacheValid(cache: DailyBriefCache, currentIds: string[]): boolean {
   const a = [...cache.article_ids].sort();
   const b = [...currentIds].sort();
