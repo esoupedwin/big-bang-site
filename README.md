@@ -7,6 +7,7 @@ A Next.js web application that displays news articles sourced from multiple RSS 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Pages](#pages)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Features](#features)
@@ -18,9 +19,35 @@ A Next.js web application that displays news articles sourced from multiple RSS 
 
 ---
 
+## Pages
+
+### Welcome (`/` — unauthenticated)
+The landing page shown to visitors who are not signed in. Features a full-screen ASCII animation — four concentric waves expanding continuously from the centre — with the app name, tagline, and a **Sign in with Google** button overlaid on top. No content is accessible without authentication.
+
+### Explore (`/` — authenticated)
+The main application view, accessible after sign-in. Displays articles from the `feed_entries` table, newest first, with the following controls:
+
+- **Tag filters** — Geography and Topics pill selectors at the top
+- **Miscellaneous toggle** — hides articles tagged only as `Misc` (hidden by default)
+- **Refresh button** — re-fetches data server-side without a full navigation
+- **Synthesis panel** — sends visible articles to the AI synthesis endpoint and streams back a structured intelligence brief
+- **Pagination** — 50 articles per page, navigation at top and bottom
+- **Collapsible text** — `summary` and `gist` fields are clamped to 4 lines with expand/collapse
+
+All filter state (geo tags, topic tags, misc toggle, page number) is encoded in the URL, making every view bookmarkable and shareable.
+
+### Profile (`/profile`)
+The user settings page, accessible by clicking the user's name or avatar in the top-right header. Requires authentication — unauthenticated visits redirect to `/`.
+
+- Displays the user's Google profile picture, name, and email
+- **Theme preference** — choose between Light, Dark, or System (follows OS setting). Selection is saved immediately to the `user_preferences` database table and applied via a cookie on subsequent visits to avoid flash.
+- A **← Back to feed** link returns to the Explore page.
+
+---
+
 ## Overview
 
-The main page (`/`) queries the `feed_entries` table from Neon Postgres and renders articles newest first. Users can filter by geography and topic, toggle visibility of miscellaneous-only articles, paginate through results 50 at a time, and request a streamed AI synthesis of the visible articles.
+The app has three pages: **Welcome** (unauthenticated landing), **Explore** (authenticated news feed), and **Profile** (user settings). The Explore page queries the `feed_entries` table from Neon Postgres and renders articles newest first. Users can filter by geography and topic, toggle visibility of miscellaneous-only articles, paginate through results 50 at a time, and request a streamed AI synthesis of the visible articles.
 
 Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate upstream service and is outside the scope of this repository.
 
@@ -46,26 +73,32 @@ Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate u
 .
 ├── app/
 │   ├── actions/
-│   │   └── auth.ts               # Server actions: googleSignIn, handleSignOut
+│   │   ├── auth.ts               # Server actions: googleSignIn, handleSignOut
+│   │   └── preferences.ts        # Server action: saveTheme (writes DB + cookie)
 │   ├── api/
 │   │   ├── auth/[...nextauth]/
 │   │   │   └── route.ts          # NextAuth.js route handler (GET + POST)
 │   │   └── synthesize/
 │   │       └── route.ts          # POST endpoint — streams GPT synthesis to the client
 │   ├── components/
-│   │   ├── AuthHeader.tsx        # Server component — shows sign-in button or user avatar
+│   │   ├── AsciiAnimation.tsx    # Full-screen ASCII big bang animation (Welcome page)
+│   │   ├── AuthHeader.tsx        # Top bar: avatar+name (links to Profile) or sign-in button
 │   │   ├── CollapsibleText.tsx   # Clamps text to 4 lines with expand/collapse toggle
-│   │   ├── FeedEntryCard.tsx     # Renders a single article list item
-│   │   ├── MiscToggle.tsx        # Switch to show/hide miscellaneous-only articles + refresh button
-│   │   ├── PageNav.tsx           # Previous / Next pagination navigation
-│   │   ├── SynthesisPanel.tsx    # Synthesize button and streamed GPT output panel
-│   │   └── TagFilter.tsx         # Geography and topic tag filter pills
-│   ├── layout.tsx                # Root layout — includes top bar with AuthHeader
-│   └── page.tsx                  # Main page — fetches and renders feed entries
+│   │   ├── FeedEntryCard.tsx     # Renders a single article list item (Explore page)
+│   │   ├── MiscToggle.tsx        # Misc-only toggle + refresh button (Explore page)
+│   │   ├── PageNav.tsx           # Previous / Next pagination navigation (Explore page)
+│   │   ├── SynthesisPanel.tsx    # Synthesize button and streamed GPT output (Explore page)
+│   │   ├── TagFilter.tsx         # Geography and topic tag filter pills (Explore page)
+│   │   └── ThemeProvider.tsx     # Client component — applies .dark class based on preference
+│   ├── profile/
+│   │   └── page.tsx              # Profile page — user info and theme preference
+│   ├── layout.tsx                # Root layout — top bar, ThemeProvider, SSR dark class
+│   └── page.tsx                  # Welcome (unauthenticated) + Explore (authenticated)
 ├── lib/
 │   ├── auth.ts                   # NextAuth config: Google provider, exports auth/signIn/signOut
 │   ├── db.ts                     # Neon database client
 │   ├── feed.ts                   # FeedEntry type, getAllTags, getFeedEntries, constants
+│   ├── preferences.ts            # UserPreferences type, getUserPreferences, upsertUserPreferences
 │   ├── prompts.ts                # Synthesis system prompt, model name, buildFocusParts helper
 │   └── types.ts                  # Shared TypeScript types (EntryInput)
 ├── .env.local                    # Local environment variables (not committed)
@@ -175,6 +208,17 @@ Table: **`feed_entries`**
 | `fetched_at` | `TIMESTAMPTZ` | Timestamp when the row was inserted |
 | `geo_tags` | `TEXT[]` | Geography tags assigned by the preprocessing pipeline |
 | `topic_tags` | `TEXT[]` | Topic tags assigned by the preprocessing pipeline |
+
+---
+
+Table: **`user_preferences`**
+
+| Column | Type | Description |
+|---|---|---|
+| `user_email` | `TEXT` | Primary key — Google account email |
+| `theme` | `TEXT` | User's theme choice: `light`, `dark`, or `system` (default) |
+| `created_at` | `TIMESTAMPTZ` | Row creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | Last update timestamp |
 
 ---
 
