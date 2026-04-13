@@ -40,6 +40,22 @@ TOPIC-SPECIFIC FOCUS — China · Taiwan:
 - Note involvement of third parties: Japan, Australia, Philippines — especially basing or overflight rights
 `,
   },
+  {
+    key:       "ai-developments",
+    label:     "AI Developments",
+    geoTags:   ["United States", "China", "European Union", "United Kingdom"],
+    topicTags: ["Technology", "Artificial Intelligence"],
+    systemPromptAddendum: `
+TOPIC-SPECIFIC FOCUS — AI Developments:
+- Prioritise major model releases, capability breakthroughs, and benchmark results from frontier labs (OpenAI, Google DeepMind, Anthropic, Meta, xAI, Mistral, DeepSeek, Baidu)
+- Track regulatory and legislative developments: EU AI Act implementation, US executive orders, China's AI governance rules, UK policy positions
+- Flag significant compute or infrastructure moves: chip export controls, data centre investments, energy agreements tied to AI
+- Note corporate strategy shifts: mergers, acquisitions, partnerships, or lab spin-outs with strategic implications
+- Monitor geopolitical dimensions of AI competition — particularly US–China technology rivalry and export restrictions
+- Flag safety or alignment incidents, model misuse events, or significant public statements from governments or international bodies
+- Distinguish between genuine capability advances and marketing announcements
+`,
+  },
 ];
 
 export type DailyBriefCache = {
