@@ -135,6 +135,22 @@ export function DailyBriefPanel({ topicKey, initialContent, initialHeadline, dif
         <p className="text-sm italic text-zinc-500 dark:text-zinc-400">{headline}</p>
       ) : null}
 
+      {/* Brief bullets */}
+      <ReactMarkdown
+        components={{
+          ul: ({ children }) => <ul className="space-y-3">{children}</ul>,
+          li: ({ node, children }) => node
+            ? <CollapsibleBullet node={node}>{children}</CollapsibleBullet>
+            : <li>{children}</li>,
+          p: ({ children }) => <span>{children}</span>,
+        }}
+      >
+        {bullets}
+      </ReactMarkdown>
+      {loading && (
+        <span className="inline-block w-1 h-4 ml-1 bg-zinc-400 dark:bg-zinc-500 animate-pulse" />
+      )}
+
       {/* Diff section */}
       {showDiffSpinner ? (
         <PendingIndicator label="Checking for changes…" />
@@ -157,22 +173,6 @@ export function DailyBriefPanel({ topicKey, initialContent, initialHeadline, dif
           </ReactMarkdown>
         </div>
       ) : null}
-
-      {/* Brief bullets */}
-      <ReactMarkdown
-        components={{
-          ul: ({ children }) => <ul className="space-y-3">{children}</ul>,
-          li: ({ node, children }) => node
-            ? <CollapsibleBullet node={node}>{children}</CollapsibleBullet>
-            : <li>{children}</li>,
-          p: ({ children }) => <span>{children}</span>,
-        }}
-      >
-        {bullets}
-      </ReactMarkdown>
-      {loading && (
-        <span className="inline-block w-1 h-4 ml-1 bg-zinc-400 dark:bg-zinc-500 animate-pulse" />
-      )}
     </div>
   );
 }
