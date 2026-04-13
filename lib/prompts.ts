@@ -1,4 +1,5 @@
 export const SYNTHESIS_MODEL = "gpt-5.4";
+export const HEADLINE_MODEL   = "gpt-5.4-mini";
 
 export const HEADLINE_MARKER = "<!--BB_HEADLINE-->";
 

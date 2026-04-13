@@ -8,7 +8,7 @@ import {
   saveDailyBriefCache,
   appendDailyBriefHistory,
 } from "@/lib/brief";
-import { SYNTHESIS_MODEL, HEADLINE_MARKER, buildBriefSystemPrompt, buildDiffPrompt, buildHeadlinePrompt } from "@/lib/prompts";
+import { SYNTHESIS_MODEL, HEADLINE_MODEL, HEADLINE_MARKER, buildBriefSystemPrompt, buildDiffPrompt, buildHeadlinePrompt } from "@/lib/prompts";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
               }).then((r) => r.choices[0]?.message?.content?.trim() ?? null)
             : Promise.resolve(null),
           openai.chat.completions.create({
-            model: SYNTHESIS_MODEL,
+            model: HEADLINE_MODEL,
             messages: [{ role: "user", content: buildHeadlinePrompt(newContent, topic.label) }],
             stream: false,
           }).then((r) => r.choices[0]?.message?.content?.trim() ?? null),
