@@ -1,6 +1,7 @@
+import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { googleSignIn, handleSignOut } from "@/app/actions/auth";
-import Image from "next/image";
 
 export async function AuthHeader() {
   const session = await auth();
@@ -10,18 +11,20 @@ export async function AuthHeader() {
     <div className="flex items-center gap-3">
       {user ? (
         <>
-          {user.image && (
-            <Image
-              src={user.image}
-              alt={user.name ?? "User avatar"}
-              width={28}
-              height={28}
-              className="rounded-full"
-            />
-          )}
-          <span className="text-sm text-zinc-600 dark:text-zinc-300 hidden sm:block">
-            {user.name}
-          </span>
+          <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            {user.image && (
+              <Image
+                src={user.image}
+                alt={user.name ?? "User avatar"}
+                width={28}
+                height={28}
+                className="rounded-full"
+              />
+            )}
+            <span className="text-sm text-zinc-600 dark:text-zinc-300 hidden sm:block">
+              {user.name}
+            </span>
+          </Link>
           <form action={handleSignOut}>
             <button
               type="submit"

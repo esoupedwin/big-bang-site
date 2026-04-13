@@ -1,0 +1,80 @@
+import { redirect } from "next/navigation";
+import Image from "next/image";
+import { auth } from "@/lib/auth";
+import { getUserPreferences, type Theme } from "@/lib/preferences";
+import { saveTheme } from "@/app/actions/preferences";
+
+const THEMES: { value: Theme; label: string; description: string }[] = [
+  { value: "light", label: "Light", description: "Always light" },
+  { value: "dark",  label: "Dark",  description: "Always dark"  },
+  { value: "system", label: "System", description: "Follow OS setting" },
+];
+
+export default async function ProfilePage() {
+  const session = await auth();
+  if (!session?.user?.email) redirect("/");
+
+  const { user } = session;
+  const prefs = await getUserPreferences(user.email!);
+
+  return (
+    <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
+      <div className="max-w-lg mx-auto space-y-10">
+
+        {/* User info */}
+        <div className="flex items-center gap-4">
+          {user.image && (
+            <Image
+              src={user.image}
+              alt={user.name ?? "Avatar"}
+              width={56}
+              height={56}
+              className="rounded-full"
+            />
+          )}
+          <div>
+            <p className="text-lg font-semibold text-zinc-900 dark:text-white">{user.name}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{user.email}</p>
+          </div>
+        </div>
+
+        <hr className="border-zinc-200 dark:border-zinc-800" />
+
+        {/* Preferences */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-4">
+            Preferences
+          </h2>
+
+          <div className="space-y-6">
+            {/* Theme */}
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-white mb-3">Theme</p>
+              <div className="flex gap-3">
+                {THEMES.map(({ value, label, description }) => {
+                  const active = prefs.theme === value;
+                  return (
+                    <form key={value} action={saveTheme.bind(null, value)}>
+                      <button
+                        type="submit"
+                        className={`px-4 py-2.5 rounded-lg border text-sm text-left transition-colors w-28 ${
+                          active
+                            ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white font-medium"
+                            : "bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500"
+                        }`}
+                      >
+                        <span className="block font-medium">{label}</span>
+                        <span className="block text-xs opacity-60 mt-0.5">{description}</span>
+                      </button>
+                    </form>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  );
+}
