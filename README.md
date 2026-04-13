@@ -34,6 +34,7 @@ Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate u
 | Language | [TypeScript](https://www.typescriptlang.org/) |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/) |
 | Database | [Neon Postgres](https://neon.tech/) (serverless) |
+| Auth | [NextAuth.js v5](https://authjs.dev/) (Google OAuth) |
 | AI | [OpenAI GPT](https://platform.openai.com/) (streaming synthesis) |
 | Hosting | [Vercel](https://vercel.com/) |
 
@@ -44,19 +45,25 @@ Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate u
 ```
 .
 ├── app/
+│   ├── actions/
+│   │   └── auth.ts               # Server actions: googleSignIn, handleSignOut
 │   ├── api/
+│   │   ├── auth/[...nextauth]/
+│   │   │   └── route.ts          # NextAuth.js route handler (GET + POST)
 │   │   └── synthesize/
 │   │       └── route.ts          # POST endpoint — streams GPT synthesis to the client
 │   ├── components/
+│   │   ├── AuthHeader.tsx        # Server component — shows sign-in button or user avatar
 │   │   ├── CollapsibleText.tsx   # Clamps text to 4 lines with expand/collapse toggle
 │   │   ├── FeedEntryCard.tsx     # Renders a single article list item
 │   │   ├── MiscToggle.tsx        # Switch to show/hide miscellaneous-only articles + refresh button
 │   │   ├── PageNav.tsx           # Previous / Next pagination navigation
 │   │   ├── SynthesisPanel.tsx    # Synthesize button and streamed GPT output panel
 │   │   └── TagFilter.tsx         # Geography and topic tag filter pills
-│   ├── layout.tsx                # Root layout and metadata
+│   ├── layout.tsx                # Root layout — includes top bar with AuthHeader
 │   └── page.tsx                  # Main page — fetches and renders feed entries
 ├── lib/
+│   ├── auth.ts                   # NextAuth config: Google provider, exports auth/signIn/signOut
 │   ├── db.ts                     # Neon database client
 │   ├── feed.ts                   # FeedEntry type, getAllTags, getFeedEntries, constants
 │   ├── prompts.ts                # Synthesis system prompt, model name, buildFocusParts helper
@@ -118,9 +125,14 @@ Create a `.env.local` file in the project root:
 ```env
 DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
 OPENAI_API_KEY=sk-...
+AUTH_SECRET=<generate with: npx auth secret>
+AUTH_GOOGLE_ID=<your Google OAuth client ID>
+AUTH_GOOGLE_SECRET=<your Google OAuth client secret>
 ```
 
-Your Neon connection string can be found in the Neon dashboard under **Connection Details**. Your OpenAI API key can be found at [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+- **Neon**: connection string from the Neon dashboard under **Connection Details**
+- **OpenAI**: key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- **Google OAuth**: create credentials at [console.cloud.google.com](https://console.cloud.google.com) → APIs & Services → Credentials → Create OAuth 2.0 Client ID. Set the authorised redirect URI to `http://localhost:3000/api/auth/callback/google` for local dev and `https://your-domain.com/api/auth/callback/google` for production.
 
 ### Run the development server
 
@@ -138,6 +150,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 |---|---|
 | `DATABASE_URL` | Neon Postgres connection string |
 | `OPENAI_API_KEY` | OpenAI API key for the synthesis feature |
+| `AUTH_SECRET` | Random secret for signing session tokens — generate with `npx auth secret` |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 
 ---
 
@@ -181,8 +196,9 @@ The page is fully driven by URL search parameters, making every view bookmarkabl
 ### Vercel
 
 1. Import the repository in the [Vercel dashboard](https://vercel.com/new).
-2. Add both `DATABASE_URL` and `OPENAI_API_KEY` under **Project Settings → Environment Variables**.
-3. Deploy. Vercel will detect Next.js automatically.
+2. Add all five environment variables (`DATABASE_URL`, `OPENAI_API_KEY`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`) under **Project Settings → Environment Variables**.
+3. Add `https://your-vercel-domain.vercel.app/api/auth/callback/google` as an authorised redirect URI in your Google Cloud OAuth client.
+4. Deploy. Vercel will detect Next.js automatically.
 
 ### Node.js version
 
