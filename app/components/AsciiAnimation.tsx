@@ -23,8 +23,8 @@ export function AsciiAnimation() {
 
     function frame(now: number) {
       const t = (now - start) / 1000;
-      const cols = Math.floor(pre!.clientWidth / CHAR_W);
-      const rows = Math.floor(pre!.clientHeight / CHAR_H);
+      const cols = Math.ceil(pre!.clientWidth / CHAR_W) + 1;
+      const rows = Math.ceil(pre!.clientHeight / CHAR_H) + 1;
       const cx = cols / 2;
       const cy = rows / 2;
       const aspect = CHAR_W / CHAR_H;
@@ -74,7 +74,7 @@ export function AsciiAnimation() {
     <pre
       ref={preRef}
       style={{ fontSize: "10px", lineHeight: "16px" }}
-      className="absolute inset-0 font-mono text-zinc-400 dark:text-zinc-600 overflow-hidden pointer-events-none select-none whitespace-pre"
+      className="absolute inset-0 m-0 p-0 font-mono text-zinc-400 dark:text-zinc-600 overflow-hidden pointer-events-none select-none whitespace-pre"
       aria-hidden="true"
     />
   );
