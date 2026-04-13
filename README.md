@@ -1,13 +1,13 @@
 # Big Bang Site
 
-A Next.js web application that displays news articles sourced from multiple RSS feeds. Articles are pre-processed and stored in a Neon Postgres database by an external ingestion pipeline. This app is read-only — it queries and displays the data.
+A Next.js intelligence news application that displays articles sourced from multiple RSS feeds and provides AI-powered geopolitical analysis. Articles are pre-processed and stored in a Neon Postgres database by an external ingestion pipeline. This app is read-only with respect to articles — it queries, displays, and synthesises them.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
 - [Pages](#pages)
+- [Overview](#overview)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Features](#features)
@@ -36,18 +36,35 @@ The main application view, accessible after sign-in. Displays articles from the 
 
 All filter state (geo tags, topic tags, misc toggle, page number) is encoded in the URL, making every view bookmarkable and shareable.
 
+### Daily Brief (`/daily-brief`)
+An intelligence digest page tracking a set of pre-configured geopolitical and technology **coverages**. Each coverage is a focused topic with its own geography tags, topic tags, and system prompt addendum. Currently three coverages:
+
+| Key | Label | Geo Tags | Topic Tags |
+|---|---|---|---|
+| `us-iran-israel` | US · Iran · Israel | United States, Iran, Israel | Bilateral Relations, Military |
+| `china-taiwan` | China · Taiwan | China, Taiwan | Bilateral Relations, Military |
+| `ai-developments` | AI Developments | United States, China | Transnational, AI |
+
+For each coverage, the page:
+1. Queries articles from the last 24 hours matching the coverage's tags
+2. Checks the cache (`daily_brief_cache`) — serves cached content if no new articles have appeared since the last generation
+3. If the cache is stale, streams a fresh bullet-point brief from the AI
+4. After streaming, generates a **diff assessment** (comparing new brief to previous) and a **witty headline** in parallel
+5. Saves everything to `daily_brief_cache` (upsert) and `daily_brief_history` (append-only log)
+
+Bullets are collapsible — each shows only the bold headline by default; clicking `+` expands to full detail.
+
 ### Profile (`/profile`)
-The user settings page, accessible by clicking the user's name or avatar in the top-right header. Requires authentication — unauthenticated visits redirect to `/`.
+The user settings page, accessible by clicking the user's name or avatar in the top-right header. Requires authentication.
 
 - Displays the user's Google profile picture, name, and email
-- **Theme preference** — choose between Light, Dark, or System (follows OS setting). Selection is saved immediately to the `user_preferences` database table and applied via a cookie on subsequent visits to avoid flash.
-- A **← Back to feed** link returns to the Explore page.
+- **Theme preference** — Light, Dark, or System. Saved to `user_preferences` and synced across devices via database lookup on each page load.
 
 ---
 
 ## Overview
 
-The app has three pages: **Welcome** (unauthenticated landing), **Explore** (authenticated news feed), and **Profile** (user settings). The Explore page queries the `feed_entries` table from Neon Postgres and renders articles newest first. Users can filter by geography and topic, toggle visibility of miscellaneous-only articles, paginate through results 50 at a time, and request a streamed AI synthesis of the visible articles.
+The app has four pages: **Welcome** (unauthenticated landing), **Explore** (authenticated news feed), **Daily Brief** (AI coverage digests), and **Profile** (user settings). A persistent top navigation bar links between Explore and Daily Brief for authenticated users.
 
 Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate upstream service and is outside the scope of this repository.
 
@@ -62,7 +79,7 @@ Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate u
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/) |
 | Database | [Neon Postgres](https://neon.tech/) (serverless) |
 | Auth | [NextAuth.js v5](https://authjs.dev/) (Google OAuth) |
-| AI | [OpenAI GPT](https://platform.openai.com/) (streaming synthesis) |
+| AI | [OpenAI GPT](https://platform.openai.com/) (streaming + non-streaming) |
 | Hosting | [Vercel](https://vercel.com/) |
 
 ---
@@ -73,35 +90,44 @@ Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate u
 .
 ├── app/
 │   ├── actions/
-│   │   ├── auth.ts               # Server actions: googleSignIn, handleSignOut
-│   │   └── preferences.ts        # Server action: saveTheme (writes DB + cookie)
+│   │   ├── auth.ts                   # Server actions: googleSignIn, handleSignOut
+│   │   └── preferences.ts            # Server action: saveTheme (writes DB + cookie)
 │   ├── api/
 │   │   ├── auth/[...nextauth]/
-│   │   │   └── route.ts          # NextAuth.js route handler (GET + POST)
+│   │   │   └── route.ts              # NextAuth.js route handler (GET + POST)
+│   │   ├── daily-brief/
+│   │   │   └── route.ts              # GET ?topic= — streams brief, generates diff + headline, saves cache
 │   │   └── synthesize/
-│   │       └── route.ts          # POST endpoint — streams GPT synthesis to the client
+│   │       └── route.ts              # POST — streams GPT synthesis to the client (Explore page)
 │   ├── components/
-│   │   ├── AsciiAnimation.tsx    # Full-screen ASCII big bang animation (Welcome page)
-│   │   ├── AuthHeader.tsx        # Top bar: avatar+name (links to Profile) or sign-in button
-│   │   ├── CollapsibleText.tsx   # Clamps text to 4 lines with expand/collapse toggle
-│   │   ├── FeedEntryCard.tsx     # Renders a single article list item (Explore page)
-│   │   ├── MiscToggle.tsx        # Misc-only toggle + refresh button (Explore page)
-│   │   ├── PageNav.tsx           # Previous / Next pagination navigation (Explore page)
-│   │   ├── SynthesisPanel.tsx    # Synthesize button and streamed GPT output (Explore page)
-│   │   ├── TagFilter.tsx         # Geography and topic tag filter pills (Explore page)
-│   │   └── ThemeProvider.tsx     # Client component — applies .dark class based on preference
+│   │   ├── AppNav.tsx                # Top navigation bar: Explore / Daily Brief tabs
+│   │   ├── AsciiAnimation.tsx        # Full-screen ASCII big bang animation (Welcome page)
+│   │   ├── AuthHeader.tsx            # Top bar: avatar+name (links to Profile) or sign-in button
+│   │   ├── CollapsibleBullet.tsx     # Expandable bullet for Daily Brief (headline-only by default)
+│   │   ├── CollapsibleText.tsx       # Clamps text to 4 lines with expand/collapse toggle
+│   │   ├── DailyBriefPanel.tsx       # Streams and renders a single coverage brief
+│   │   ├── FeedEntryCard.tsx         # Renders a single article list item (Explore page)
+│   │   ├── GoogleIcon.tsx            # Shared Google SVG icon
+│   │   ├── MiscToggle.tsx            # Misc-only toggle + refresh button (Explore page)
+│   │   ├── PageNav.tsx               # Previous / Next pagination navigation (Explore page)
+│   │   ├── SynthesisPanel.tsx        # Synthesize button and streamed GPT output (Explore page)
+│   │   ├── TagFilter.tsx             # Geography and topic tag filter pills (Explore page)
+│   │   └── ThemeProvider.tsx         # Client component — applies .dark class based on preference
+│   ├── daily-brief/
+│   │   └── page.tsx                  # Daily Brief page — renders all coverages in parallel
 │   ├── profile/
-│   │   └── page.tsx              # Profile page — user info and theme preference
-│   ├── layout.tsx                # Root layout — top bar, ThemeProvider, SSR dark class
-│   └── page.tsx                  # Welcome (unauthenticated) + Explore (authenticated)
+│   │   └── page.tsx                  # Profile page — user info and theme preference
+│   ├── layout.tsx                    # Root layout — top bar, ThemeProvider, AppNav, SSR dark class
+│   └── page.tsx                      # Welcome (unauthenticated) + Explore (authenticated)
 ├── lib/
-│   ├── auth.ts                   # NextAuth config: Google provider, exports auth/signIn/signOut
-│   ├── db.ts                     # Neon database client
-│   ├── feed.ts                   # FeedEntry type, getAllTags, getFeedEntries, constants
-│   ├── preferences.ts            # UserPreferences type, getUserPreferences, upsertUserPreferences
-│   ├── prompts.ts                # Synthesis system prompt, model name, buildFocusParts helper
-│   └── types.ts                  # Shared TypeScript types (EntryInput)
-├── .env.local                    # Local environment variables (not committed)
+│   ├── auth.ts                       # NextAuth config: Google provider, exports auth/signIn/signOut
+│   ├── brief.ts                      # BriefTopic type, BRIEF_TOPICS (coverages), DB functions for cache + history
+│   ├── db.ts                         # Neon database client
+│   ├── feed.ts                       # FeedEntry type, getAllTags, getFeedEntries, constants
+│   ├── preferences.ts                # UserPreferences type, getUserPreferences, upsertUserPreferences
+│   ├── prompts.ts                    # Model constants, system prompts, prompt builder functions
+│   └── types.ts                      # Shared TypeScript types (EntryInput)
+├── .env.local                        # Local environment variables (not committed)
 └── package.json
 ```
 
@@ -109,32 +135,50 @@ Data ingestion (RSS fetching, summarisation, tagging) is handled by a separate u
 
 ## Features
 
-### Tag Filtering
-Two independent filter groups are displayed at the top of the page:
+### Tag Filtering (Explore)
+Two independent filter groups:
 
-- **Geography** — filter by the `geo_tags` array column (e.g. United States, China, Middle East)
-- **Topics** — filter by the `topic_tags` array column (e.g. AI, Economy Trade, Military)
+- **Geography** — filter by `geo_tags` (e.g. United States, China, Middle East)
+- **Topics** — filter by `topic_tags` (e.g. AI, Economy Trade, Military)
 
-Multiple tags can be selected within each group. Selecting tags from both groups applies both filters simultaneously (AND logic between groups, OR logic within a group). Active filters are preserved across page navigation.
+AND logic between groups, OR logic within a group.
 
-### Miscellaneous Filter
-A toggle switch below the tag filters controls visibility of articles whose `topic_tags` contains only `["Misc"]`. These are hidden by default. Articles that have `Misc` alongside other topic tags are always shown regardless of the toggle.
+### Miscellaneous Filter (Explore)
+Toggles visibility of articles whose `topic_tags` is only `["Misc"]`. Hidden by default.
 
-### Pagination
-Results are paginated at 50 articles per page. Navigation buttons appear at both the top and bottom of the article list. The current page, all active tag filters, and the misc toggle state are all preserved in the URL.
+### Pagination (Explore)
+50 articles per page. All filter state is URL-encoded.
 
-### Collapsible Text
-Both the `summary` and `gist` fields are rendered with a 4-line clamp. A **Show more / Show less** button appears only when the text actually overflows — short text is left unchanged.
+### Collapsible Text (Explore)
+`summary` and `gist` fields clamped to 4 lines with a Show more / Show less toggle. Re-checks overflow on resize via `ResizeObserver`.
 
-### Refresh
-A refresh button sits next to the miscellaneous toggle. It re-fetches server data in place without changing the URL or navigation state, useful after the upstream pipeline has ingested new articles.
+### Geopolitical Synthesis (Explore)
+Sends visible articles to `/api/synthesize`. Streams a structured Markdown intelligence brief: key developments, thematic analysis, notable signals, diverging narratives, gaps, and a bottom-line takeaway. Scoped to active tag filters.
 
-### Geopolitical Synthesis
-A **Synthesize** button below the filters sends the currently visible articles to the `/api/synthesize` endpoint. The server calls the OpenAI API and streams the response back as plain text. Output is rendered as Markdown using `react-markdown` and `@tailwindcss/typography`.
+### Daily Brief Coverages
+Each **coverage** is defined in `lib/brief.ts` as a `BriefTopic` with a unique key, label, geo/topic tag filters, and a `systemPromptAddendum` appended to the shared base prompt.
 
-The synthesis is scoped to the active tag filters — the selected geography and topic tags are included in the prompt as an analytical focus directive so the model orients its analysis accordingly.
+**Cache invalidation logic:** The cache is valid as long as every current article was included in the last generation. New articles trigger regeneration; articles ageing out of the 24h rolling window do not.
 
-The system prompt is defined in `lib/prompts.ts` and instructs the model to produce a structured intelligence brief: key developments, thematic analysis, notable signals, diverging narratives, gaps, and a bottom-line takeaway. Output is capped at 350 words.
+**Generation pipeline per coverage:**
+1. Fetch matching articles from the last 24 hours
+2. Check cache validity
+3. Stream bullet-point brief (`SYNTHESIS_MODEL = gpt-5.4`)
+4. In parallel: generate diff assessment + witty headline (`HEADLINE_MODEL = gpt-5.4-mini`)
+5. Append headline to stream via `<!--BB_HEADLINE-->` marker
+6. Save to `daily_brief_cache` (upsert) and `daily_brief_history` (append)
+
+### Collapsible Bullets (Daily Brief)
+Each bullet shows only its **bold headline** by default. `+` expands; `−` collapses. Headline extracted from the hast AST node — no string parsing.
+
+### Witty Headline (Daily Brief)
+A punchy, witty headline summarising each coverage, generated by `HEADLINE_MODEL` after the brief completes. Displayed in italic above the bullets.
+
+### Diff Assessment (Daily Brief)
+Compares the new brief against the previous cached version. Significant new developments are listed; otherwise a "no significant change" notice is shown. Displayed in a bordered box above the bullets.
+
+### Theme (Profile)
+Light, Dark, or System preference stored in `user_preferences`. Read from the database on each page load for logged-in users so it syncs across devices.
 
 ---
 
@@ -143,7 +187,7 @@ The system prompt is defined in `lib/prompts.ts` and instructs the model to prod
 ### Prerequisites
 
 - Node.js 24.x
-- A [Neon](https://neon.tech/) Postgres database with the `feed_entries` table populated by the upstream ingestion pipeline
+- A [Neon](https://neon.tech/) Postgres database populated by the upstream ingestion pipeline
 
 ### Install dependencies
 
@@ -163,17 +207,11 @@ AUTH_GOOGLE_ID=<your Google OAuth client ID>
 AUTH_GOOGLE_SECRET=<your Google OAuth client secret>
 ```
 
-- **Neon**: connection string from the Neon dashboard under **Connection Details**
-- **OpenAI**: key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-- **Google OAuth**: create credentials at [console.cloud.google.com](https://console.cloud.google.com) → APIs & Services → Credentials → Create OAuth 2.0 Client ID. Set the authorised redirect URI to `http://localhost:3000/api/auth/callback/google` for local dev and `https://your-domain.com/api/auth/callback/google` for production.
-
 ### Run the development server
 
 ```bash
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
@@ -182,7 +220,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | Neon Postgres connection string |
-| `OPENAI_API_KEY` | OpenAI API key for the synthesis feature |
+| `OPENAI_API_KEY` | OpenAI API key |
 | `AUTH_SECRET` | Random secret for signing session tokens — generate with `npx auth secret` |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
@@ -191,7 +229,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Database Schema
 
-Table: **`feed_entries`**
+### `feed_entries`
 
 | Column | Type | Description |
 |---|---|---|
@@ -206,32 +244,58 @@ Table: **`feed_entries`**
 | `author` | `TEXT` | Article author |
 | `published_at` | `TIMESTAMPTZ` | Publication date from the feed |
 | `fetched_at` | `TIMESTAMPTZ` | Timestamp when the row was inserted |
-| `geo_tags` | `TEXT[]` | Geography tags assigned by the preprocessing pipeline |
-| `topic_tags` | `TEXT[]` | Topic tags assigned by the preprocessing pipeline |
+| `geo_tags` | `TEXT[]` | Geography tags |
+| `topic_tags` | `TEXT[]` | Topic tags |
 
----
-
-Table: **`user_preferences`**
+### `user_preferences`
 
 | Column | Type | Description |
 |---|---|---|
 | `user_email` | `TEXT` | Primary key — Google account email |
-| `theme` | `TEXT` | User's theme choice: `light`, `dark`, or `system` (default) |
+| `theme` | `TEXT` | `light`, `dark`, or `system` (default) |
 | `created_at` | `TIMESTAMPTZ` | Row creation timestamp |
 | `updated_at` | `TIMESTAMPTZ` | Last update timestamp |
+
+### `daily_brief_cache`
+
+One row per coverage. Upserted on each generation.
+
+| Column | Type | Description |
+|---|---|---|
+| `topic_key` | `TEXT` | Primary key — matches `BriefTopic.key` |
+| `content` | `TEXT` | Generated bullet-point brief (Markdown) |
+| `article_ids` | `TEXT[]` | IDs of articles included in this generation |
+| `generated_at` | `TIMESTAMPTZ` | When this cache entry was last written |
+| `diff_summary` | `TEXT` | Diff assessment vs. previous brief (nullable) |
+| `headline` | `TEXT` | Witty AI-generated headline (nullable) |
+
+### `daily_brief_history`
+
+Append-only log of every generation.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGSERIAL` | Primary key |
+| `topic_key` | `TEXT` | Coverage key |
+| `content` | `TEXT` | Generated brief (Markdown) |
+| `article_ids` | `TEXT[]` | Article IDs included |
+| `article_count` | `INT` | Number of articles |
+| `diff_summary` | `TEXT` | Diff vs. previous (nullable) |
+| `headline` | `TEXT` | Witty headline (nullable) |
+| `generated_at` | `TIMESTAMPTZ` | Generation timestamp |
 
 ---
 
 ## URL Parameters
 
-The page is fully driven by URL search parameters, making every view bookmarkable and shareable.
+The Explore page is fully driven by URL search parameters.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `page` | integer | Current page number (default: 1) |
-| `geo` | string (repeatable) | Active geography tag filters, e.g. `?geo=China&geo=Taiwan` |
-| `topic` | string (repeatable) | Active topic tag filters, e.g. `?topic=AI&topic=Military` |
-| `show_misc` | `1` | When present, includes articles tagged only with `Misc` |
+| `geo` | string (repeatable) | Active geography tag filters |
+| `topic` | string (repeatable) | Active topic tag filters |
+| `show_misc` | `1` | When present, includes Misc-only articles |
 
 ---
 
@@ -240,16 +304,16 @@ The page is fully driven by URL search parameters, making every view bookmarkabl
 ### Vercel
 
 1. Import the repository in the [Vercel dashboard](https://vercel.com/new).
-2. Add all five environment variables (`DATABASE_URL`, `OPENAI_API_KEY`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`) under **Project Settings → Environment Variables**.
-3. Add `https://your-vercel-domain.vercel.app/api/auth/callback/google` as an authorised redirect URI in your Google Cloud OAuth client.
-4. Deploy. Vercel will detect Next.js automatically.
+2. Add all five environment variables under **Project Settings → Environment Variables**.
+3. Add `https://your-domain.com/api/auth/callback/google` as an authorised redirect URI in your Google Cloud OAuth client.
+4. Deploy — Vercel detects Next.js automatically.
 
 ### Node.js version
 
-This project requires Node.js **24.x**, specified in `package.json`:
+This project requires Node.js **24.x**:
 
 ```json
 "engines": { "node": "24.x" }
 ```
 
-Set the matching version in **Vercel → Project Settings → Node.js Version** if it is not picked up automatically.
+Set the matching version in **Vercel → Project Settings → Node.js Version** if not picked up automatically.
