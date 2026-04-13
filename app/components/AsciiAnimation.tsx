@@ -11,15 +11,20 @@ export function AsciiAnimation() {
     const pre = preRef.current;
     if (!pre) return;
 
-    const CHAR_W = 10;
-    const CHAR_H = 16;
+    // Measure actual rendered character dimensions
+    const probe = document.createElement("span");
+    probe.textContent = "X";
+    pre.appendChild(probe);
+    const { width: CHAR_W, height: CHAR_H } = probe.getBoundingClientRect();
+    pre.removeChild(probe);
+
     let animId: number;
     let start = performance.now();
 
     function frame(now: number) {
       const t = (now - start) / 1000;
-      const cols = Math.floor(window.innerWidth / CHAR_W);
-      const rows = Math.floor(window.innerHeight / CHAR_H);
+      const cols = Math.floor(pre!.clientWidth / CHAR_W);
+      const rows = Math.floor(pre!.clientHeight / CHAR_H);
       const cx = cols / 2;
       const cy = rows / 2;
       const aspect = CHAR_W / CHAR_H;
