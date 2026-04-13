@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { buildFocusParts, SYNTHESIS_MODEL, SYNTHESIS_SYSTEM_PROMPT } from "@/lib/prompts";
 import { EntryInput } from "@/lib/types";
+import { auth } from "@/lib/auth";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
@@ -10,6 +11,9 @@ if (!process.env.OPENAI_API_KEY) {
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const {
     entries,
     selectedGeoTags = [],

@@ -6,7 +6,7 @@ import { AuthHeader } from "./components/AuthHeader";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AppNav } from "./components/AppNav";
 import { auth } from "@/lib/auth";
-import type { Theme } from "@/lib/preferences";
+import { getUserPreferences, type Theme } from "@/lib/preferences";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,7 +25,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const [jar, session] = await Promise.all([cookies(), auth()]);
-  const theme = (jar.get("theme")?.value ?? "system") as Theme;
+
+  // Prefer DB preference for logged-in users so theme syncs across devices.
+  // Fall back to cookie for guests or if DB lookup fails.
+  let theme: Theme = (jar.get("theme")?.value ?? "system") as Theme;
+  if (session?.user?.email) {
+    const prefs = await getUserPreferences(session.user.email);
+    theme = prefs.theme;
+  }
 
   // Apply dark class server-side to avoid flash on dark/light preferences.
   // For "system" the client-side ThemeProvider takes over.

@@ -17,7 +17,7 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
   useEffect(() => {
     if (initialContent) return; // cache hit — nothing to do
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function fetchBrief() {
       setContent("");
@@ -25,7 +25,9 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
       setLoading(true);
 
       try {
-        const res = await fetch(`/api/daily-brief?topic=${encodeURIComponent(topicKey)}`);
+        const res = await fetch(`/api/daily-brief?topic=${encodeURIComponent(topicKey)}`, {
+          signal: controller.signal,
+        });
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
@@ -39,18 +41,20 @@ export function DailyBriefPanel({ topicKey, initialContent, diffSummary }: Props
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done || cancelled) break;
+          if (done) break;
           setContent((prev) => prev + decoder.decode(value, { stream: true }));
         }
-      } catch {
-        if (!cancelled) setError("An unexpected error occurred.");
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          setError("An unexpected error occurred.");
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
     }
 
     fetchBrief();
-    return () => { cancelled = true; };
+    return () => { controller.abort(); };
   }, [initialContent]);
 
   if (loading && !content) {

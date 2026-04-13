@@ -14,9 +14,14 @@ export function CollapsibleText({ text, className = "" }: Props) {
 
   useEffect(() => {
     const el = ref.current;
-    if (el) {
-      setOverflows(el.scrollHeight > el.clientHeight);
-    }
+    if (!el) return;
+
+    const check = () => setOverflows(el.scrollHeight > el.clientHeight);
+    check();
+
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [text]);
 
   return (
