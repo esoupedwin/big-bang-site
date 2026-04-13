@@ -5,9 +5,10 @@ import ReactMarkdown from "react-markdown";
 
 type Props = {
   initialContent: string | null;
+  diffSummary:    string | null;
 };
 
-export function DailyBriefPanel({ initialContent }: Props) {
+export function DailyBriefPanel({ initialContent, diffSummary }: Props) {
   const [content, setContent] = useState(initialContent ?? "");
   const [loading, setLoading] = useState(!initialContent);
   const [error, setError] = useState("");
@@ -64,7 +65,29 @@ export function DailyBriefPanel({ initialContent }: Props) {
   }
 
   return (
-    <div className="mt-2">
+    <div className="mt-2 space-y-6">
+      {/* Diff section — shown when cached brief has a diff assessment */}
+      {diffSummary && (
+        <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-700 dark:text-zinc-300">
+          <ReactMarkdown
+            components={{
+              p:      ({ children }) => <p className="leading-relaxed">{children}</p>,
+              strong: ({ children }) => <span className="font-semibold text-zinc-900 dark:text-white">{children}</span>,
+              ul:     ({ children }) => <ul className="mt-2 space-y-1">{children}</ul>,
+              li:     ({ children }) => (
+                <li className="flex gap-2 leading-relaxed">
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
+                  <span>{children}</span>
+                </li>
+              ),
+            }}
+          >
+            {diffSummary}
+          </ReactMarkdown>
+        </div>
+      )}
+
+      {/* Brief bullets */}
       <ReactMarkdown
         components={{
           ul: ({ children }) => <ul className="space-y-3">{children}</ul>,

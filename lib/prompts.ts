@@ -1,5 +1,25 @@
 export const SYNTHESIS_MODEL = "gpt-5.4";
 
+export function buildDiffPrompt(oldContent: string, newContent: string, previousGeneratedAt: string): string {
+  const dt = new Date(previousGeneratedAt).toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", timeZoneName: "short",
+  });
+  return `Compare these two versions of the US-Iran-Israel conflict brief and identify any significant new developments.
+
+Previous brief (generated ${dt}):
+${oldContent}
+
+New brief:
+${newContent}
+
+Output rules:
+- If there are significant new developments: output exactly "**Changes since ${dt}:**" on its own line, followed by 1–3 concise bullet points.
+- If there are no significant changes: output exactly one line: "No significant change from the brief generated at ${dt}."
+- Significant = new military actions, diplomatic shifts, escalations, casualties, or major statements. Minor rephrasing does not qualify.
+- Do NOT include any other text.`;
+}
+
 export const DAILY_BRIEF_SYSTEM_PROMPT = `
 You are a geopolitical intelligence analyst. Your task is to produce a concise bullet-point summary of the latest key developments in the US-Iran-Israel conflict based on news articles from the past 24 hours.
 

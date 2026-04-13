@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
-import { getDailyBriefEntries, saveDailyBriefCache, DAILY_BRIEF_TOPIC_KEY } from "@/lib/brief";
-import { SYNTHESIS_MODEL, DAILY_BRIEF_SYSTEM_PROMPT } from "@/lib/prompts";
+import {
+  getDailyBriefEntries,
+  getDailyBriefCache,
+  saveDailyBriefCache,
+  DAILY_BRIEF_TOPIC_KEY,
+} from "@/lib/brief";
+import { SYNTHESIS_MODEL, DAILY_BRIEF_SYSTEM_PROMPT, buildDiffPrompt } from "@/lib/prompts";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set");
@@ -14,7 +19,10 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const entries = await getDailyBriefEntries();
+  const [entries, previousCache] = await Promise.all([
+    getDailyBriefEntries(),
+    getDailyBriefCache(DAILY_BRIEF_TOPIC_KEY),
+  ]);
 
   if (!entries.length) {
     return NextResponse.json(
@@ -47,17 +55,33 @@ export async function GET() {
   const encoder = new TextEncoder();
   const readable = new ReadableStream({
     async start(controller) {
-      let fullText = "";
+      let newContent = "";
       try {
         for await (const chunk of stream) {
           const text = chunk.choices[0]?.delta?.content ?? "";
           if (text) {
-            fullText += text;
+            newContent += text;
             controller.enqueue(encoder.encode(text));
           }
         }
-        // Persist to cache once generation is complete
-        await saveDailyBriefCache(DAILY_BRIEF_TOPIC_KEY, fullText, articleIds);
+
+        // Assess diff against previous brief (if one exists)
+        let diffSummary: string | null = null;
+        if (previousCache?.content) {
+          const diffResponse = await openai.chat.completions.create({
+            model: SYNTHESIS_MODEL,
+            messages: [
+              {
+                role: "user",
+                content: buildDiffPrompt(previousCache.content, newContent, previousCache.generated_at),
+              },
+            ],
+            stream: false,
+          });
+          diffSummary = diffResponse.choices[0]?.message?.content?.trim() ?? null;
+        }
+
+        await saveDailyBriefCache(DAILY_BRIEF_TOPIC_KEY, newContent, articleIds, diffSummary);
       } finally {
         controller.close();
       }

@@ -20,8 +20,9 @@ export default async function DailyBriefPage() {
   ]);
 
   const articleIds = entries.map((e) => String(e.id));
-  const cachedContent =
-    cache && isCacheValid(cache, articleIds) ? cache.content : null;
+  const cacheHit = cache && isCacheValid(cache, articleIds);
+  const cachedContent  = cacheHit ? cache.content      : null;
+  const cachedDiff     = cacheHit ? cache.diff_summary  : null;
 
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
@@ -61,7 +62,7 @@ export default async function DailyBriefPage() {
                 <span className="text-xs text-zinc-300 dark:text-zinc-600">· cached</span>
               )}
             </div>
-            <DailyBriefPanel initialContent={cachedContent} />
+            <DailyBriefPanel initialContent={cachedContent} diffSummary={cachedDiff} />
           </>
         )}
 
