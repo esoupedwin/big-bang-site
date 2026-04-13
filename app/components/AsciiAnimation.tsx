@@ -42,16 +42,13 @@ export function AsciiAnimation() {
 
           let intensity = 0;
 
-          // Four expanding waves, each launched 2s apart, looping every 8s
-          const cycle = t % 8;
+          // Four waves with independent staggered phases — no shared reset
           for (let w = 0; w < 4; w++) {
-            const wt = cycle - w * 2;
-            if (wt > 0) {
-              const radius = wt * 18;
-              const diff = Math.abs(dist - radius);
-              const spread = 1.5 + wt * 1.2;
-              intensity += Math.exp(-(diff * diff) / (2 * spread * spread)) * Math.exp(-wt * 0.35);
-            }
+            const wt = (t + w * 2) % 8;
+            const radius = wt * 18;
+            const diff = Math.abs(dist - radius);
+            const spread = 1.5 + wt * 1.2;
+            intensity += Math.exp(-(diff * diff) / (2 * spread * spread)) * Math.exp(-wt * 0.35);
           }
 
           // Subtle background shimmer
