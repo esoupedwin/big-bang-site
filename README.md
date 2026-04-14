@@ -6,6 +6,7 @@ A Next.js intelligence news application that displays articles sourced from mult
 
 ## Table of Contents
 
+- [Related Repositories](#related-repositories)
 - [Pages](#pages)
 - [Overview](#overview)
 - [Tech Stack](#tech-stack)
@@ -16,6 +17,20 @@ A Next.js intelligence news application that displays articles sourced from mult
 - [Database Schema](#database-schema)
 - [URL Parameters](#url-parameters)
 - [Deployment](#deployment)
+
+---
+
+## Related Repositories
+
+This app is part of a two-service system sharing a single Neon Postgres database.
+
+| Repo | Role |
+|---|---|
+| `big-bang-site` (this repo) | BIGBANG — Next.js web application. Reads from DB, serves users, runs AI synthesis. |
+| `interlink` | INTERLINK — Preprocessing service. Ingests RSS feeds, generates gists, tags articles, writes to DB. |
+| [`bigbang-interlink-sync`](https://github.com/esoupedwin/bigbang-interlink-sync) | Shared source of truth — database schema, data contracts, tag taxonomy, architecture docs. |
+
+Any change to the database schema, tag taxonomy, or shared data conventions must be reflected in **`bigbang-interlink-sync`** first, then coordinated across both services.
 
 ---
 
