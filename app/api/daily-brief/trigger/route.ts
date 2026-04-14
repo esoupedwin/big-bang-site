@@ -10,9 +10,10 @@ import {
 } from "@/lib/brief";
 import { generateBriefForTopic } from "@/lib/generate-brief";
 
-// Allow the after() callback enough time to complete LLM generation.
-// Requires Vercel Pro or higher.
-export const maxDuration = 300;
+// Vercel Hobby plan max is 60s; Pro allows up to 800s.
+// LLM generation (bullets + diff + headline) typically takes 20–50s.
+// Upgrade to Pro if timeouts occur under load.
+export const maxDuration = 60;
 
 // Treat a lock older than this as stale (crashed job) and allow retriggering.
 const STALE_LOCK_MS = 3 * 60 * 1000;
