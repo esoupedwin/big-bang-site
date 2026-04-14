@@ -5,7 +5,9 @@ import { cookies } from "next/headers";
 import { AuthHeader } from "./components/AuthHeader";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AppNav } from "./components/AppNav";
+import { AdminTrigger } from "./components/AdminTrigger";
 import { auth } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import { getUserPreferences, type Theme } from "@/lib/preferences";
 import "./globals.css";
 
@@ -25,6 +27,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const [jar, session] = await Promise.all([cookies(), auth()]);
+  const admin = await isAdmin(session?.user?.email);
 
   // Prefer DB preference for logged-in users so theme syncs across devices.
   // Fall back to cookie for guests or if DB lookup fails.
@@ -50,7 +53,8 @@ export default async function RootLayout({
       <body className="h-full flex flex-col">
         <ThemeProvider theme={theme} />
         <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-2.5">
-          <div className="max-w-2xl mx-auto flex items-center justify-end">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            {admin ? <AdminTrigger /> : <span />}
             <Suspense>
               <AuthHeader />
             </Suspense>

@@ -3,20 +3,23 @@ import { sql } from "./db";
 export type Theme = "light" | "dark" | "system";
 
 export type UserPreferences = {
-  user_email: string;
-  theme: Theme;
+  user_id: string;
+  theme:   Theme;
 };
 
 export async function getUserPreferences(email: string): Promise<UserPreferences> {
   const rows = await sql`
-    SELECT user_email, theme
-    FROM user_preferences
-    WHERE user_email = ${email}
+    SELECT p.user_id, p.theme
+    FROM user_preferences p
+    JOIN users u ON p.user_id = u.id
+    WHERE u.email = ${email}
   `;
-  if (rows.length > 0) {
-    return rows[0] as UserPreferences;
-  }
-  return { user_email: email, theme: "system" };
+  if (rows.length > 0) return rows[0] as UserPreferences;
+
+  // No row yet — return default without inserting
+  const userRows = await sql`SELECT id FROM users WHERE email = ${email}`;
+  const user_id  = userRows[0]?.id ?? email; // fallback keeps the caller happy
+  return { user_id, theme: "system" };
 }
 
 export async function upsertUserPreferences(
@@ -24,9 +27,9 @@ export async function upsertUserPreferences(
   theme: Theme
 ): Promise<void> {
   await sql`
-    INSERT INTO user_preferences (user_email, theme)
-    VALUES (${email}, ${theme})
-    ON CONFLICT (user_email) DO UPDATE
+    INSERT INTO user_preferences (user_id, theme)
+    SELECT id, ${theme} FROM users WHERE email = ${email}
+    ON CONFLICT (user_id) DO UPDATE
       SET theme = ${theme}, updated_at = NOW()
   `;
 }

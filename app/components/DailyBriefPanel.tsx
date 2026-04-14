@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { CollapsibleBullet } from "./CollapsibleBullet";
+import { ArticlesDrawer, ArticleRef } from "./ArticlesDrawer";
 
 function UpdatingIndicator() {
   return (
@@ -31,6 +32,7 @@ type Props = {
   cachedDiff:     string | null;
   cachedAt:       string | null;
   articleCount:   number;
+  articles:       ArticleRef[];
 };
 
 export function DailyBriefPanel({
@@ -40,13 +42,15 @@ export function DailyBriefPanel({
   cachedDiff,
   cachedAt,
   articleCount,
+  articles,
 }: Props) {
   const [content,      setContent]      = useState(cachedContent);
   const [headline,     setHeadline]     = useState(cachedHeadline);
   const [diff,         setDiff]         = useState(cachedDiff);
   const [generatedAt,  setGeneratedAt]  = useState(cachedAt);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error,        setError]        = useState("");
+  const [isRefreshing,  setIsRefreshing]  = useState(false);
+  const [isDrawerOpen,  setIsDrawerOpen]  = useState(false);
+  const [error,         setError]         = useState("");
 
   // Phase 1: witty headline streams char by char
   const [animWitty,    setAnimWitty]    = useState<string | null>(null);
@@ -243,11 +247,24 @@ export function DailyBriefPanel({
     : null;
 
   return (
+    <>
+    <ArticlesDrawer
+      isOpen={isDrawerOpen}
+      onClose={() => setIsDrawerOpen(false)}
+      articles={articles}
+    />
     <div className="mt-2 space-y-6">
       {/* Metadata row */}
       <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500">
         <span>
-          Based on {articleCount} article{articleCount !== 1 ? "s" : ""} from the last 24 hours
+          Based on{" "}
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+          >
+            {articleCount} article{articleCount !== 1 ? "s" : ""}
+          </button>
+          {" "}from the last 24 hours
         </span>
         {isRefreshing ? (
           <>
@@ -344,5 +361,6 @@ export function DailyBriefPanel({
         </div>
       )}
     </div>
+    </>
   );
 }

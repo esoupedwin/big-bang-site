@@ -14,6 +14,7 @@ export type FeedEntry = {
   gist:             string | null;   // AI-generated summary of full article body (INTERLINK)
   author:           string | null;
   published_at:     string | null;
+  fetched_at:       string | null;
   geo_tags:         string[] | null;
   topic_tags:       string[] | null;
 };
@@ -46,7 +47,7 @@ export async function getFeedEntries(
 
   const [entries, countResult] = await Promise.all([
     sql`
-      SELECT id, feed_name, title, link, summary, gist, author, published_at, geo_tags, topic_tags
+      SELECT id, feed_name, title, link, summary, gist, author, published_at, fetched_at, geo_tags, topic_tags
       FROM feed_entries
       WHERE (${skipGeo} OR geo_tags && ${geoParam})
         AND (${skipTopic} OR topic_tags && ${topicParam})

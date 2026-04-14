@@ -1,5 +1,6 @@
 import { FeedEntry } from "@/lib/feed";
 import { CollapsibleText } from "./CollapsibleText";
+import { FetchedAtPopover } from "./FetchedAtPopover";
 
 export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
   return (
@@ -10,9 +11,16 @@ export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
         </span>
         {entry.published_at && (
           <span className="text-xs text-zinc-400 dark:text-zinc-500">
-            {new Date(entry.published_at).toLocaleString()}
+            <span className="text-zinc-300 dark:text-zinc-600">Published </span>
+            {new Date(entry.published_at).toLocaleString("en-GB", {
+              day: "2-digit", month: "short", year: "numeric",
+              hour: "2-digit", minute: "2-digit",
+              timeZone: "Asia/Singapore",
+              timeZoneName: "short",
+            })}
           </span>
         )}
+        {entry.fetched_at && <FetchedAtPopover fetchedAt={entry.fetched_at} />}
       </div>
 
       <a

@@ -80,7 +80,7 @@ export type DailyBriefCache = {
 
 export async function getDailyBriefEntries(topic: BriefTopic): Promise<FeedEntry[]> {
   const rows = await sql`
-    SELECT id, feed_name, title, link, summary, gist, author, published_at, geo_tags, topic_tags
+    SELECT id, feed_name, title, link, summary, gist, author, published_at, fetched_at, geo_tags, topic_tags
     FROM feed_entries
     WHERE published_at >= NOW() - INTERVAL '24 hours'
       AND geo_tags   && ${topic.geoTags}::text[]

@@ -19,6 +19,12 @@ export default async function DailyBriefPage() {
       return {
         topic,
         articleCount:   entries.length,
+        articles:       entries.map((e) => ({
+          title:       e.title,
+          link:        e.link,
+          feedName:    e.feed_name,
+          publishedAt: e.published_at,
+        })),
         cachedContent:  cache?.content      ?? null,
         cachedDiff:     cache?.diff_summary  ?? null,
         cachedAt:       cache?.generated_at  ?? null,
@@ -31,7 +37,7 @@ export default async function DailyBriefPage() {
     <main className="min-h-[220vh] bg-white dark:bg-zinc-950 px-4 pt-10 pb-48">
       <div className="max-w-2xl mx-auto space-y-12">
 
-        {topicData.map(({ topic, articleCount, cachedContent, cachedDiff, cachedAt, cachedHeadline }, idx) => (
+        {topicData.map(({ topic, articleCount, articles, cachedContent, cachedDiff, cachedAt, cachedHeadline }, idx) => (
           <section key={topic.key}>
             {idx > 0 && (
               <hr className="mb-12 border-zinc-200 dark:border-zinc-800" />
@@ -66,6 +72,7 @@ export default async function DailyBriefPage() {
                 cachedDiff={cachedDiff}
                 cachedAt={cachedAt}
                 articleCount={articleCount}
+                articles={articles}
               />
             )}
           </section>
