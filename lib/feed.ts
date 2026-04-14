@@ -4,16 +4,18 @@ export const PAGE_SIZE = 50;
 export const MISC_TAG = "Misc";
 
 export type FeedEntry = {
-  id: string;
-  feed_name: string;
-  title: string | null;
-  link: string | null;
-  summary: string | null;
-  gist: string | null;
-  author: string | null;
-  published_at: string | null;
-  geo_tags: string[] | null;
-  topic_tags: string[] | null;
+  id:               string;
+  feed_name:        string;
+  title:            string | null;   // always English (translated if necessary)
+  original_title:   string | null;   // pre-translation; null for English-source entries
+  link:             string | null;
+  summary:          string | null;   // always English (translated if necessary)
+  original_summary: string | null;   // pre-translation; null for English-source entries
+  gist:             string | null;   // AI-generated summary of full article body (INTERLINK)
+  author:           string | null;
+  published_at:     string | null;
+  geo_tags:         string[] | null;
+  topic_tags:       string[] | null;
 };
 
 export async function getAllTags(): Promise<{ geoTags: string[]; topicTags: string[] }> {
