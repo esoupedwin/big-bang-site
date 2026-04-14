@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
-import { getAllTags, getFeedEntries, PAGE_SIZE } from "@/lib/feed";
+import { getFeedEntries, PAGE_SIZE } from "@/lib/feed";
 import { FeedEntryCard } from "./components/FeedEntryCard";
 import { MiscToggle } from "./components/MiscToggle";
 import { PageNav } from "./components/PageNav";
 import { SynthesisPanel } from "./components/SynthesisPanel";
-import { TagFilter } from "./components/TagFilter";
+import { TagFilterAsync, TagFilterSkeleton } from "./components/TagFilterAsync";
 import { googleSignIn } from "./actions/auth";
 import { AsciiAnimation } from "./components/AsciiAnimation";
 import { GoogleIcon } from "./components/GoogleIcon";
@@ -50,10 +50,7 @@ export default async function Home({
   const selectedTopicTags: string[] = topic ? (Array.isArray(topic) ? topic : [topic]) : [];
   const showMisc = show_misc === "1";
 
-  const [{ geoTags, topicTags }, { entries, total }] = await Promise.all([
-    getAllTags(),
-    getFeedEntries(page, selectedGeoTags, selectedTopicTags, showMisc),
-  ]);
+  const { entries, total } = await getFeedEntries(page, selectedGeoTags, selectedTopicTags, showMisc);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const currentPage = Math.min(page, totalPages || 1);
@@ -65,8 +62,8 @@ export default async function Home({
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">Explore</h1>
 
-        <Suspense>
-          <TagFilter geoTags={geoTags} topicTags={topicTags} />
+        <Suspense fallback={<TagFilterSkeleton />}>
+          <TagFilterAsync />
         </Suspense>
 
         <div className="mt-4">

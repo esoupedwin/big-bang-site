@@ -1,34 +1,28 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  BRIEF_TOPICS,
-  getDailyBriefEntries,
-  getDailyBriefCache,
-  isCacheValid,
-} from "@/lib/brief";
+import { BRIEF_TOPICS, getDailyBriefEntries, getDailyBriefCache } from "@/lib/brief";
 import { DailyBriefPanel } from "@/app/components/DailyBriefPanel";
 
 export default async function DailyBriefPage() {
   const session = await auth();
   if (!session) redirect("/");
 
-  // Fetch entries + cache for all topics in parallel
+  // Fetch entries (for article count) + cache (for stale content) in parallel.
+  // Cache validity is intentionally NOT checked here — the trigger endpoint
+  // handles that and starts background regeneration when needed.
   const topicData = await Promise.all(
     BRIEF_TOPICS.map(async (topic) => {
       const [entries, cache] = await Promise.all([
         getDailyBriefEntries(topic),
         getDailyBriefCache(topic.key),
       ]);
-      const articleIds  = entries.map((e) => String(e.id));
-      const cacheHit    = cache && isCacheValid(cache, articleIds);
       return {
         topic,
-        entries,
-        articleIds,
-        cachedContent:  cacheHit ? cache.content      : null,
-        cachedDiff:     cacheHit ? cache.diff_summary  : null,
-        cachedAt:       cacheHit ? cache.generated_at  : null,
-        cachedHeadline: cacheHit ? cache.headline      : null,
+        articleCount:   entries.length,
+        cachedContent:  cache?.content      ?? null,
+        cachedDiff:     cache?.diff_summary  ?? null,
+        cachedAt:       cache?.generated_at  ?? null,
+        cachedHeadline: cache?.headline      ?? null,
       };
     })
   );
@@ -37,9 +31,8 @@ export default async function DailyBriefPage() {
     <main className="min-h-[220vh] bg-white dark:bg-zinc-950 px-4 pt-10 pb-48">
       <div className="max-w-2xl mx-auto space-y-12">
 
-        {topicData.map(({ topic, entries, cachedContent, cachedDiff, cachedAt, cachedHeadline }, idx) => (
+        {topicData.map(({ topic, articleCount, cachedContent, cachedDiff, cachedAt, cachedHeadline }, idx) => (
           <section key={topic.key}>
-            {/* Divider between topics */}
             {idx > 0 && (
               <hr className="mb-12 border-zinc-200 dark:border-zinc-800" />
             )}
@@ -61,33 +54,19 @@ export default async function DailyBriefPage() {
               </div>
             </div>
 
-            {entries.length === 0 ? (
+            {articleCount === 0 ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 No articles found in the last 24 hours for this topic.
               </p>
             ) : (
-              <>
-                <div className="flex items-center gap-2 mb-4">
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                    Based on {entries.length} article{entries.length !== 1 ? "s" : ""} from the last 24 hours
-                  </p>
-                  {cachedContent && cachedAt && (
-                    <span className="text-xs text-zinc-300 dark:text-zinc-600">
-                      · cached {new Date(cachedAt).toLocaleString("en-GB", {
-                        day: "2-digit", month: "short",
-                        hour: "2-digit", minute: "2-digit",
-                        timeZoneName: "short",
-                      })}
-                    </span>
-                  )}
-                </div>
-                <DailyBriefPanel
-                  topicKey={topic.key}
-                  initialContent={cachedContent}
-                  initialHeadline={cachedHeadline}
-                  diffSummary={cachedDiff}
-                />
-              </>
+              <DailyBriefPanel
+                topicKey={topic.key}
+                cachedContent={cachedContent}
+                cachedHeadline={cachedHeadline}
+                cachedDiff={cachedDiff}
+                cachedAt={cachedAt}
+                articleCount={articleCount}
+              />
             )}
           </section>
         ))}

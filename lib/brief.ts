@@ -12,11 +12,14 @@ export type BriefTopic = {
 export const BRIEF_TOPICS: BriefTopic[] = [
   {
     key:       "us-iran-israel",
-    label:     "US · Iran · Israel",
+    label:     "Latest Developments in the US–Iran–Israel Conflict in the Middle East",
     geoTags:   ["United States", "Iran", "Israel"],
     topicTags: ["Bilateral Relations", "Military"],
     systemPromptAddendum: `
-TOPIC-SPECIFIC FOCUS — US · Iran · Israel:
+COVERAGE FOCUS: Latest Developments in the US–Iran–Israel Conflict in the Middle East
+Every bullet must be directly relevant to this coverage. Prioritise events that advance, escalate, de-escalate, or reframe the US–Iran–Israel conflict dynamic. Discard articles that do not materially relate to this triangular relationship or its immediate theatre.
+
+TOPIC-SPECIFIC PRIORITIES:
 - Prioritise any developments in or around the Strait of Hormuz: shipping activity, Iranian naval posturing, seizures, or threats to freedom of navigation
 - Track US carrier group and naval asset movements in the Persian Gulf and Red Sea
 - Note Israeli airstrikes, drone operations, or cross-border fire involving Lebanon, Syria, Gaza, or Iran
@@ -27,11 +30,14 @@ TOPIC-SPECIFIC FOCUS — US · Iran · Israel:
   },
   {
     key:       "china-taiwan",
-    label:     "China · Taiwan",
+    label:     "Latest Developments in China–Taiwan Cross-Strait Relations",
     geoTags:   ["China", "Taiwan"],
     topicTags: ["Bilateral Relations", "Military"],
     systemPromptAddendum: `
-TOPIC-SPECIFIC FOCUS — China · Taiwan:
+COVERAGE FOCUS: Latest Developments in China–Taiwan Cross-Strait Relations
+Every bullet must be directly relevant to this coverage. Prioritise events that shift the military balance, diplomatic posture, or political status across the Taiwan Strait. Discard articles that do not materially affect cross-strait dynamics.
+
+TOPIC-SPECIFIC PRIORITIES:
 - Prioritise PLA military activity: exercises, incursions into Taiwan's Air Defence Identification Zone (ADIZ), and naval movements in the Taiwan Strait and South China Sea
 - Track US arms sales, military support, and naval transits through the Taiwan Strait
 - Note any statements or actions from Beijing signalling shift in cross-strait posture — diplomatic, economic, or military
@@ -42,11 +48,14 @@ TOPIC-SPECIFIC FOCUS — China · Taiwan:
   },
   {
     key:       "ai-developments",
-    label:     "AI Developments",
+    label:     "AI Landscape Update: Capabilities, Initiatives, and Emerging Trends",
     geoTags:   ["United States", "China", "Transnational"],
     topicTags: ["AI"],
     systemPromptAddendum: `
-TOPIC-SPECIFIC FOCUS — AI Developments:
+COVERAGE FOCUS: AI Landscape Update: Capabilities, Initiatives, and Emerging Trends
+Every bullet must be directly relevant to this coverage. Prioritise developments that meaningfully shift the AI capability frontier, the competitive landscape, or the policy and governance environment. Discard articles that are tangential to AI or lack material significance.
+
+TOPIC-SPECIFIC PRIORITIES:
 - Prioritise major model releases, capability breakthroughs, and benchmark results from frontier labs (OpenAI, Google DeepMind, Anthropic, Meta, xAI, Mistral, DeepSeek, Baidu)
 - Track regulatory and legislative developments: EU AI Act implementation, US executive orders, China's AI governance rules, UK policy positions
 - Flag significant compute or infrastructure moves: chip export controls, data centre investments, energy agreements tied to AI
@@ -59,12 +68,14 @@ TOPIC-SPECIFIC FOCUS — AI Developments:
 ];
 
 export type DailyBriefCache = {
-  topic_key:    string;
-  content:      string;
-  article_ids:  string[];
-  generated_at: string;
-  diff_summary: string | null;
-  headline:     string | null;
+  topic_key:        string;
+  content:          string;
+  article_ids:      string[];
+  generated_at:     string;
+  diff_summary:     string | null;
+  headline:         string | null;
+  status:           string;        // 'idle' | 'generating'
+  generating_since: string | null;
 };
 
 export async function getDailyBriefEntries(topic: BriefTopic): Promise<FeedEntry[]> {
@@ -81,7 +92,7 @@ export async function getDailyBriefEntries(topic: BriefTopic): Promise<FeedEntry
 
 export async function getDailyBriefCache(topicKey: string): Promise<DailyBriefCache | null> {
   const rows = await sql`
-    SELECT topic_key, content, article_ids, generated_at, diff_summary, headline
+    SELECT topic_key, content, article_ids, generated_at, diff_summary, headline, status, generating_since
     FROM daily_brief_cache
     WHERE topic_key = ${topicKey}
   `;
@@ -96,15 +107,35 @@ export async function saveDailyBriefCache(
   headline:    string | null
 ): Promise<void> {
   await sql`
-    INSERT INTO daily_brief_cache (topic_key, content, article_ids, diff_summary, headline)
-    VALUES (${topicKey}, ${content}, ${articleIds}, ${diffSummary}, ${headline})
+    INSERT INTO daily_brief_cache (topic_key, content, article_ids, diff_summary, headline, status, generating_since)
+    VALUES (${topicKey}, ${content}, ${articleIds}, ${diffSummary}, ${headline}, 'idle', NULL)
     ON CONFLICT (topic_key) DO UPDATE
-      SET content      = ${content},
-          article_ids  = ${articleIds},
-          diff_summary = ${diffSummary},
-          headline     = ${headline},
-          generated_at = NOW()
+      SET content           = ${content},
+          article_ids       = ${articleIds},
+          diff_summary      = ${diffSummary},
+          headline          = ${headline},
+          generated_at      = NOW(),
+          status            = 'idle',
+          generating_since  = NULL
   `;
+}
+
+export async function setGeneratingStatus(topicKey: string, generating: boolean): Promise<void> {
+  if (generating) {
+    await sql`
+      INSERT INTO daily_brief_cache (topic_key, status, generating_since, content, article_ids)
+      VALUES (${topicKey}, 'generating', NOW(), '', '{}')
+      ON CONFLICT (topic_key) DO UPDATE
+        SET status           = 'generating',
+            generating_since = NOW()
+    `;
+  } else {
+    await sql`
+      UPDATE daily_brief_cache
+      SET status = 'idle', generating_since = NULL
+      WHERE topic_key = ${topicKey}
+    `;
+  }
 }
 
 export async function appendDailyBriefHistory(

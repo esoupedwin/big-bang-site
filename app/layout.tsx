@@ -30,8 +30,12 @@ export default async function RootLayout({
   // Fall back to cookie for guests or if DB lookup fails.
   let theme: Theme = (jar.get("theme")?.value ?? "system") as Theme;
   if (session?.user?.email) {
-    const prefs = await getUserPreferences(session.user.email);
-    theme = prefs.theme;
+    try {
+      const prefs = await getUserPreferences(session.user.email);
+      theme = prefs.theme;
+    } catch {
+      // DB unreachable — cookie value is used as fallback
+    }
   }
 
   // Apply dark class server-side to avoid flash on dark/light preferences.
