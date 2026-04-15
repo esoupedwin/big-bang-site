@@ -87,10 +87,11 @@ export function userCoverageToBriefTopic(c: UserCoverage): BriefTopic {
     : "";
 
   return {
-    key:       c.id,
-    label:     c.label,
-    geoTags:   c.geo_tags,
-    topicTags: c.topic_tags,
+    key:        c.id,
+    label:      c.label,
+    geoTags:    c.geo_tags,
+    topicTags:  c.topic_tags,
+    priorities: c.priorities,
     systemPromptAddendum: `
 COVERAGE FOCUS: ${c.label}
 Every bullet must be directly relevant to this coverage. Prioritise events that directly advance, escalate, de-escalate, or reframe this coverage area. Discard articles that do not materially relate to this coverage focus.
