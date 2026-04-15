@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { BRIEF_TOPICS, getDailyBriefCache } from "@/lib/brief";
+import { getDailyBriefCache } from "@/lib/brief";
+import { getUserIdByEmail, getUserCoverages } from "@/lib/coverages";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const topicKey = req.nextUrl.searchParams.get("topic") ?? "";
-  const topic = BRIEF_TOPICS.find((t) => t.key === topicKey);
-  if (!topic) return NextResponse.json({ error: "Unknown topic." }, { status: 400 });
+
+  const userId   = await getUserIdByEmail(session.user.email);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const coverages = await getUserCoverages(userId);
+  const coverage  = coverages.find((c) => c.id === topicKey);
+  if (!coverage) return NextResponse.json({ error: "Unknown topic." }, { status: 400 });
 
   const cache = await getDailyBriefCache(topicKey);
 

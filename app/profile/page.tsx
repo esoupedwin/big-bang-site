@@ -82,6 +82,34 @@ export default async function ProfilePage() {
           </div>
         </section>
 
+        <hr className="border-zinc-200 dark:border-zinc-800" />
+
+        {/* Daily Brief */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-4">
+            Daily Brief
+          </h2>
+
+          <Link
+            href="/profile/coverages"
+            className="flex items-center justify-between p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors group"
+          >
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-white">Coverages</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Choose what geopolitical issues to track
+              </p>
+            </div>
+            <svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors shrink-0"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </Link>
+        </section>
+
       </div>
     </main>
   );

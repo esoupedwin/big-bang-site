@@ -6,26 +6,35 @@ export type BriefTopic = {
   label:                string;
   geoTags:              string[];
   topicTags:            string[];
+  priorities:           string | null;
   systemPromptAddendum: string;
 };
 
+/**
+ * Default coverage topics seeded into every new user's `user_coverages` table on first sign-in.
+ * At runtime the Daily Brief reads coverages from the DB (not this array directly) so that
+ * users can add, remove, and customise their own coverages.
+ *
+ * This array is still referenced in two places:
+ *  - `lib/coverages.ts` → `initializeUserCoverages`: inserts these as the starting set for new users
+ *  - `lib/migrate.ts`   → `runMigrations`: backfills the `priorities` column on rows that were
+ *    seeded before that column existed, matching by label
+ */
 export const BRIEF_TOPICS: BriefTopic[] = [
   {
     key:       "us-iran-israel",
     label:     "Latest Developments in the US–Iran–Israel Conflict in the Middle East",
     geoTags:   ["United States", "Iran", "Israel"],
     topicTags: ["Bilateral Relations", "Military"],
-    systemPromptAddendum: `
-COVERAGE FOCUS: Latest Developments in the US–Iran–Israel Conflict in the Middle East
-Every bullet must be directly relevant to this coverage. Prioritise events that advance, escalate, de-escalate, or reframe the US–Iran–Israel conflict dynamic. Discard articles that do not materially relate to this triangular relationship or its immediate theatre.
-
-TOPIC-SPECIFIC PRIORITIES:
-- Prioritise any developments in or around the Strait of Hormuz: shipping activity, Iranian naval posturing, seizures, or threats to freedom of navigation
+    priorities: `- Prioritise any developments in or around the Strait of Hormuz: shipping activity, Iranian naval posturing, seizures, or threats to freedom of navigation
 - Track US carrier group and naval asset movements in the Persian Gulf and Red Sea
 - Note Israeli airstrikes, drone operations, or cross-border fire involving Lebanon, Syria, Gaza, or Iran
 - Monitor Iranian proxy activity: Hezbollah, Houthis, Iraqi militias — especially any coordinated escalation
 - Flag any signals related to Iran's nuclear programme: enrichment milestones, IAEA access, or diplomatic back-channel activity
-- Distinguish between direct state-to-state actions and proxy-mediated ones
+- Distinguish between direct state-to-state actions and proxy-mediated ones`,
+    systemPromptAddendum: `
+COVERAGE FOCUS: Latest Developments in the US–Iran–Israel Conflict in the Middle East
+Every bullet must be directly relevant to this coverage. Prioritise events that advance, escalate, de-escalate, or reframe the US–Iran–Israel conflict dynamic. Discard articles that do not materially relate to this triangular relationship or its immediate theatre.
 `,
   },
   {
@@ -33,36 +42,32 @@ TOPIC-SPECIFIC PRIORITIES:
     label:     "Latest Developments in China–Taiwan Cross-Strait Relations",
     geoTags:   ["China", "Taiwan"],
     topicTags: ["Bilateral Relations", "Military"],
-    systemPromptAddendum: `
-COVERAGE FOCUS: Latest Developments in China–Taiwan Cross-Strait Relations
-Every bullet must be directly relevant to this coverage. Prioritise events that shift the military balance, diplomatic posture, or political status across the Taiwan Strait. Discard articles that do not materially affect cross-strait dynamics.
-
-TOPIC-SPECIFIC PRIORITIES:
-- Prioritise PLA military activity: exercises, incursions into Taiwan's Air Defence Identification Zone (ADIZ), and naval movements in the Taiwan Strait and South China Sea
+    priorities: `- Prioritise PLA military activity: exercises, incursions into Taiwan's Air Defence Identification Zone (ADIZ), and naval movements in the Taiwan Strait and South China Sea
 - Track US arms sales, military support, and naval transits through the Taiwan Strait
 - Note any statements or actions from Beijing signalling shift in cross-strait posture — diplomatic, economic, or military
 - Flag Taiwanese government responses and any changes in defence posture or mobilisation
 - Monitor US–China diplomatic exchanges that touch on Taiwan's status
-- Note involvement of third parties: Japan, Australia, Philippines — especially basing or overflight rights
+- Note involvement of third parties: Japan, Australia, Philippines — especially basing or overflight rights`,
+    systemPromptAddendum: `
+COVERAGE FOCUS: Latest Developments in China–Taiwan Cross-Strait Relations
+Every bullet must be directly relevant to this coverage. Prioritise events that shift the military balance, diplomatic posture, or political status across the Taiwan Strait. Discard articles that do not materially affect cross-strait dynamics.
 `,
   },
   {
     key:       "ai-developments",
     label:     "AI Landscape Update: Capabilities, Initiatives, and Emerging Trends",
-    geoTags:   ["United States", "China", "Transnational"],
+    geoTags:   [], // empty = no geo filter (all countries)
     topicTags: ["AI"],
-    systemPromptAddendum: `
-COVERAGE FOCUS: AI Landscape Update: Capabilities, Initiatives, and Emerging Trends
-Every bullet must be directly relevant to this coverage. Prioritise developments that meaningfully shift the AI capability frontier, the competitive landscape, or the policy and governance environment. Discard articles that are tangential to AI or lack material significance.
-
-TOPIC-SPECIFIC PRIORITIES:
-- Prioritise major model releases, capability breakthroughs, and benchmark results from frontier labs (OpenAI, Google DeepMind, Anthropic, Meta, xAI, Mistral, DeepSeek, Baidu)
+    priorities: `- Prioritise major model releases, capability breakthroughs, and benchmark results from frontier labs (OpenAI, Google DeepMind, Anthropic, Meta, xAI, Mistral, DeepSeek, Baidu)
 - Track regulatory and legislative developments: EU AI Act implementation, US executive orders, China's AI governance rules, UK policy positions
 - Flag significant compute or infrastructure moves: chip export controls, data centre investments, energy agreements tied to AI
 - Note corporate strategy shifts: mergers, acquisitions, partnerships, or lab spin-outs with strategic implications
 - Monitor geopolitical dimensions of AI competition — particularly US–China technology rivalry and export restrictions
 - Flag safety or alignment incidents, model misuse events, or significant public statements from governments or international bodies
-- Distinguish between genuine capability advances and marketing announcements
+- Distinguish between genuine capability advances and marketing announcements`,
+    systemPromptAddendum: `
+COVERAGE FOCUS: AI Landscape Update: Capabilities, Initiatives, and Emerging Trends
+Every bullet must be directly relevant to this coverage. Prioritise developments that meaningfully shift the AI capability frontier, the competitive landscape, or the policy and governance environment. Discard articles that are tangential to AI or lack material significance.
 `,
   },
 ];
@@ -79,13 +84,24 @@ export type DailyBriefCache = {
 };
 
 export async function getDailyBriefEntries(topic: BriefTopic): Promise<FeedEntry[]> {
+  // Tag matching uses PostgreSQL's && (array overlap) operator:
+  //   - Within geo_tags:   OR  — article matches if it has ANY of the coverage's geo tags
+  //   - Within topic_tags: OR  — article matches if it has ANY of the coverage's topic tags
+  //   - Between the two:   AND — article must satisfy BOTH the geo and topic conditions
+  // An empty geoTags array means "all countries" — the geo filter is skipped entirely.
+  const skipGeo = topic.geoTags.length === 0;
   const rows = await sql`
     SELECT id, feed_name, title, link, summary, gist, author, published_at, fetched_at, geo_tags, topic_tags
     FROM feed_entries
     WHERE published_at >= NOW() - INTERVAL '24 hours'
-      AND geo_tags   && ${topic.geoTags}::text[]
+      AND (${skipGeo} OR geo_tags && ${topic.geoTags}::text[])
       AND topic_tags && ${topic.topicTags}::text[]
-    ORDER BY published_at DESC
+    ORDER BY
+      -- Primary: articles whose geo_tags overlap the coverage's tags more closely rank first.
+      -- Counts how many of the article's geo tags appear in the coverage's geo tag list.
+      -- When geoTags is empty (all-countries coverage), this is always 0 → pure chronological order.
+      (SELECT COUNT(*) FROM unnest(geo_tags) g WHERE g = ANY(${topic.geoTags}::text[])) DESC,
+      published_at DESC
   `;
   return rows as FeedEntry[];
 }

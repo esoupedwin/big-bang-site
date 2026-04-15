@@ -5,15 +5,28 @@ import ReactMarkdown from "react-markdown";
 import { CollapsibleBullet } from "./CollapsibleBullet";
 import { ArticlesDrawer, ArticleRef } from "./ArticlesDrawer";
 
+const UPDATING_TEXT = "Generating latest development...";
+// Each cycle: 35 chars × 50 ms = 1 750 ms typing + 250 ms pause = 2 000 ms total
+const CHAR_INTERVAL_MS  = 40;
+const RESET_PAUSE_MS    = 1050;
+
 function UpdatingIndicator() {
+  const [pos, setPos] = useState(0);
+
+  useEffect(() => {
+    if (pos < UPDATING_TEXT.length) {
+      const t = setTimeout(() => setPos((p) => p + 1), CHAR_INTERVAL_MS);
+      return () => clearTimeout(t);
+    }
+    // Fully typed — pause then restart
+    const t = setTimeout(() => setPos(0), RESET_PAUSE_MS);
+    return () => clearTimeout(t);
+  }, [pos]);
+
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-amber-500 dark:text-amber-400">
-      Updating
-      <span className="inline-flex gap-0.5 items-center">
-        <span className="w-1 h-1 rounded-full bg-amber-400 dark:bg-amber-500 animate-bounce [animation-delay:-0.3s]" />
-        <span className="w-1 h-1 rounded-full bg-amber-400 dark:bg-amber-500 animate-bounce [animation-delay:-0.15s]" />
-        <span className="w-1 h-1 rounded-full bg-amber-400 dark:bg-amber-500 animate-bounce" />
-      </span>
+    <span className="inline-flex items-center text-xs text-amber-500 dark:text-amber-400 font-mono">
+      {UPDATING_TEXT.slice(0, pos)}
+      <span className="inline-block w-0.5 h-3 bg-amber-400 dark:bg-amber-500 animate-pulse ml-0.5 align-text-bottom" />
     </span>
   );
 }
@@ -122,11 +135,17 @@ export function DailyBriefPanel({
   }) {
     setDiff(data.diffSummary);
     setGeneratedAt(data.generatedAt);
-    if (data.content) {
-      setContent(data.content);
-    }
+    if (data.content) setContent(data.content);
+    if (data.headline) setHeadline(data.headline);
+
+    // Only animate if this generatedAt hasn't been seen before in this session.
+    // Prevents re-animating the same content when the user navigates away and back.
+    const sessionKey = `brief-animated:${topicKey}`;
+    const alreadyAnimated = sessionStorage.getItem(sessionKey) === data.generatedAt;
+    if (alreadyAnimated) return;
+    if (data.generatedAt) sessionStorage.setItem(sessionKey, data.generatedAt);
+
     if (data.headline) {
-      setHeadline(data.headline);
       // Stream witty headline first; bullets will start once it finishes
       setAnimWitty(data.headline);
       setAnimWittyPos(0);
@@ -255,34 +274,33 @@ export function DailyBriefPanel({
     />
     <div className="mt-2 space-y-6">
       {/* Metadata row */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500">
-        <span>
-          Based on{" "}
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            className="underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-          >
-            {articleCount} article{articleCount !== 1 ? "s" : ""}
-          </button>
-          {" "}from the last 24 hours
-        </span>
+      <div className="flex flex-col gap-1 text-xs text-zinc-400 dark:text-zinc-500">
         {isRefreshing ? (
-          <>
-            <span>·</span>
-            <UpdatingIndicator />
-          </>
+          <UpdatingIndicator />
         ) : formattedAt ? (
-          <span className="text-zinc-300 dark:text-zinc-600">· cached {formattedAt}</span>
+          <span className="text-zinc-300 dark:text-zinc-600">Generated on {formattedAt}</span>
         ) : null}
-        {!isRefreshing && (
-          <button
-            onClick={() => { setIsRefreshing(true); triggerGeneration(true); }}
-            className="ml-auto text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
-            title="Force regenerate"
-          >
-            ↻
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <span>
+            Based on{" "}
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            >
+              {articleCount} article{articleCount !== 1 ? "s" : ""}
+            </button>
+            {" "}from the last 24 hours
+          </span>
+          {!isRefreshing && (
+            <button
+              onClick={() => { setIsRefreshing(true); triggerGeneration(true); }}
+              className="ml-auto text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+              title="Force regenerate"
+            >
+              ↻
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Witty headline — streams first, then bullets begin */}

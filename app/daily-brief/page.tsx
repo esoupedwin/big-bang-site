@@ -1,17 +1,28 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { BRIEF_TOPICS, getDailyBriefEntries, getDailyBriefCache } from "@/lib/brief";
+import { getDailyBriefEntries, getDailyBriefCache } from "@/lib/brief";
+import { getUserIdByEmail, getUserCoverages, initializeUserCoverages, userCoverageToBriefTopic } from "@/lib/coverages";
+import { runMigrations } from "@/lib/migrate";
 import { DailyBriefPanel } from "@/app/components/DailyBriefPanel";
 
 export default async function DailyBriefPage() {
   const session = await auth();
-  if (!session) redirect("/");
+  if (!session?.user?.email) redirect("/");
+
+  await runMigrations();
+
+  const userId = await getUserIdByEmail(session.user.email);
+  if (!userId) redirect("/");
+
+  await initializeUserCoverages(userId);
+  const coverages = await getUserCoverages(userId);
+  const topics = coverages.map(userCoverageToBriefTopic);
 
   // Fetch entries (for article count) + cache (for stale content) in parallel.
   // Cache validity is intentionally NOT checked here — the trigger endpoint
   // handles that and starts background regeneration when needed.
   const topicData = await Promise.all(
-    BRIEF_TOPICS.map(async (topic) => {
+    topics.map(async (topic) => {
       const [entries, cache] = await Promise.all([
         getDailyBriefEntries(topic),
         getDailyBriefCache(topic.key),
@@ -24,6 +35,8 @@ export default async function DailyBriefPage() {
           link:        e.link,
           feedName:    e.feed_name,
           publishedAt: e.published_at,
+          geoTags:     e.geo_tags,
+          topicTags:   e.topic_tags,
         })),
         cachedContent:  cache?.content      ?? null,
         cachedDiff:     cache?.diff_summary  ?? null,
@@ -47,11 +60,17 @@ export default async function DailyBriefPage() {
             <div className="mb-4">
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{topic.label}</h2>
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {topic.geoTags.map((tag) => (
-                  <span key={tag} className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-full">
-                    {tag}
+                {topic.geoTags.length === 0 ? (
+                  <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded-full">
+                    All Countries
                   </span>
-                ))}
+                ) : (
+                  topic.geoTags.map((tag) => (
+                    <span key={tag} className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-full">
+                      {tag}
+                    </span>
+                  ))
+                )}
                 {topic.topicTags.map((tag) => (
                   <span key={tag} className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
                     {tag}
