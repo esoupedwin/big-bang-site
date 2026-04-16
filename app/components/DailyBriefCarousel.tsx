@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { DailyBriefPanel } from "./DailyBriefPanel";
 import type { ArticleRef } from "./ArticlesDrawer";
 
@@ -56,6 +56,38 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
   useLayoutEffect(() => {
     applyTransforms(0, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Non-passive touchmove listener — prevents iOS pull-to-refresh when the
+  // current slide is at scrollTop 0 and the finger is moving downward.
+  // React synthetic events are passive by default so e.preventDefault() there
+  // has no effect; a native listener with { passive: false } is required.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let nativeStartY = 0;
+
+    const onNativeTouchStart = (e: TouchEvent) => {
+      nativeStartY = e.touches[0].clientY;
+    };
+
+    const onNativeTouchMove = (e: TouchEvent) => {
+      const slide = container.children[indexRef.current] as HTMLElement | undefined;
+      if (!slide) return;
+      const dy = e.touches[0].clientY - nativeStartY;
+      // Pulling down (dy > 0) while already at the top → block overscroll
+      if (dy > 0 && slide.scrollTop <= 0) {
+        e.preventDefault();
+      }
+    };
+
+    container.addEventListener("touchstart", onNativeTouchStart, { passive: true });
+    container.addEventListener("touchmove",  onNativeTouchMove,  { passive: false });
+    return () => {
+      container.removeEventListener("touchstart", onNativeTouchStart);
+      container.removeEventListener("touchmove",  onNativeTouchMove);
+    };
   }, []);
 
   function goTo(next: number) {
