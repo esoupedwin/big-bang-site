@@ -22,20 +22,29 @@ export async function POST(req: NextRequest) {
 Brief content:
 ${content}
 
-Your task: Identify specific concepts, agreements, doctrines, organisations, or technical terms mentioned in this brief that a general reader might not immediately understand. Use web search to retrieve accurate, current information about each concept.
+Your task: Identify terms or concepts from this brief that meet ALL of the following criteria:
+1. Domain-specific — geopolitical, historical, legal, diplomatic, or doctrinal in nature
+2. Not widely understood by a general educated audience
+3. Context-dependent or easily misinterpreted without background knowledge
 
-Exclusion rules — do NOT include:
+Use web search to retrieve accurate, current information for each qualifying concept.
+
+DO NOT explain:
+- Common military or security terms (e.g. "naval blockade", "airstrike", "sanctions")
+- Well-known institutions or entities (e.g. "United Nations", "US Marines", "NATO", "Pentagon")
+- Generic or self-explanatory phrases (e.g. "ceasefire talks", "diplomatic ties", "trade deficit")
 - Concepts already described or implied by the topic title "${label}"
-- Overly general knowledge that most educated adults would already know (e.g. "sanctions", "GDP", "election")
 - Person names (those are covered separately)
 
-For each qualifying concept, write exactly 2 sentences: what it is, and why it is significant in this specific context.
+Good examples of concepts worth explaining: "1992 Consensus", "Article 9 of the Japanese Constitution", "Five Eyes", "Monroe Doctrine", "AUKUS".
+
+For each qualifying concept, write exactly 2 sentences: what it is, and why it matters in this specific context.
 
 Format each entry as:
 ## [Concept or Term]
 [2 sentences]
 
-Output concept entries only — no preamble, no conclusion, no bullet points.`;
+If no concepts meet the criteria, output nothing. Output concept entries only — no preamble, no conclusion, no bullet points.`;
 
   const stream = await openai.responses.create({
     model: "gpt-5.4-nano",
