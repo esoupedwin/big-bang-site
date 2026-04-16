@@ -78,7 +78,7 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
 
       {/* ── Slide track ─────────────────────────────────────────────────── */}
       <div
-        className="flex-1 relative overflow-hidden min-h-0 w-full"
+        className="flex-1 relative overflow-hidden min-h-0 w-full overscroll-none"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -86,7 +86,7 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
           {slides.map(({ topicKey, label, geoTags, topicTags, articleCount, articles, cachedContent, cachedDiff, cachedAt, cachedHeadline }, i) => (
             <div
               key={topicKey}
-              className="absolute top-0 left-0 w-full h-full overflow-y-auto overflow-x-hidden overscroll-none"
+              className="absolute top-0 left-0 w-full h-full overflow-y-scroll overflow-x-hidden overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               style={{
                 transform:  `translateX(calc(${(i - index) * 100}% + ${dragX}px))`,
                 transition: dragging ? "none" : "transform 300ms ease-in-out",
