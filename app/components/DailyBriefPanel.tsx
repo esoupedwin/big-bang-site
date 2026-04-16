@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { CollapsibleBullet } from "./CollapsibleBullet";
 import { ArticlesDrawer, ArticleRef } from "./ArticlesDrawer";
+import { AdditionalInfoSection } from "./AdditionalInfoSection";
 
 const UPDATING_TEXT = "Generating latest development...";
 // Each cycle: 35 chars × 50 ms = 1 750 ms typing + 250 ms pause = 2 000 ms total
@@ -40,6 +41,7 @@ function extractHeadline(line: string): string {
 
 type Props = {
   topicKey:       string;
+  label:          string;
   cachedContent:  string | null;
   cachedHeadline: string | null;
   cachedDiff:     string | null;
@@ -50,6 +52,7 @@ type Props = {
 
 export function DailyBriefPanel({
   topicKey,
+  label,
   cachedContent,
   cachedHeadline,
   cachedDiff,
@@ -377,6 +380,15 @@ export function DailyBriefPanel({
             {diff}
           </ReactMarkdown>
         </div>
+      )}
+
+      {/* Additional Info — loads on explicit scroll, one-shot per slide */}
+      {!isAnimating && (
+        <AdditionalInfoSection
+          topicKey={topicKey}
+          label={label}
+          content={content}
+        />
       )}
     </div>
     </>

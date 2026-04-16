@@ -237,6 +237,7 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
               ) : (
                 <DailyBriefPanel
                   topicKey={topicKey}
+                  label={label}
                   cachedContent={cachedContent}
                   cachedHeadline={cachedHeadline}
                   cachedDiff={cachedDiff}
