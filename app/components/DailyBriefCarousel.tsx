@@ -78,25 +78,20 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
 
       {/* ── Slide track ─────────────────────────────────────────────────── */}
       <div
-        className="flex-1 flex overflow-hidden"
+        className="flex-1 relative overflow-hidden min-h-0 w-full"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <div
-          className="flex h-full"
-          style={{
-            width:      `${slides.length * 100}%`,
-            transform:  `translateX(calc(-${index * (100 / slides.length)}% + ${dragX / slides.length}px))`,
-            transition: dragging ? "none" : "transform 300ms ease-in-out",
-            willChange: "transform",
-          }}
-        >
-          {slides.map(({ topicKey, label, geoTags, topicTags, articleCount, articles, cachedContent, cachedDiff, cachedAt, cachedHeadline }) => (
+          {slides.map(({ topicKey, label, geoTags, topicTags, articleCount, articles, cachedContent, cachedDiff, cachedAt, cachedHeadline }, i) => (
             <div
               key={topicKey}
-              className="h-full overflow-y-auto"
-              style={{ width: `${100 / slides.length}%` }}
+              className="absolute top-0 left-0 w-full h-full overflow-y-auto overflow-x-hidden"
+              style={{
+                transform:  `translateX(calc(${(i - index) * 100}% + ${dragX}px))`,
+                transition: dragging ? "none" : "transform 300ms ease-in-out",
+                willChange: "transform",
+              }}
             >
               <div className="max-w-2xl mx-auto px-4 pt-10 pb-24">
 
@@ -142,7 +137,6 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
               </div>
             </div>
           ))}
-        </div>
       </div>
 
       {/* ── Desktop arrow buttons (hidden on mobile) ─────────────────────── */}

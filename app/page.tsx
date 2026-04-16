@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getFeedEntries, PAGE_SIZE } from "@/lib/feed";
 import { FeedEntryCard } from "./components/FeedEntryCard";
@@ -16,6 +17,8 @@ export default async function Home({
   searchParams: Promise<{ page?: string; geo?: string | string[]; topic?: string | string[]; show_misc?: string }>;
 }) {
   const session = await auth();
+
+  if (session) redirect("/daily-brief");
 
   if (!session) {
     return (
