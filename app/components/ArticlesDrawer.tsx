@@ -5,6 +5,8 @@ export type ArticleRef = {
   link:        string | null;
   feedName:    string | null;
   publishedAt: string | null;
+  geoTags:     string[] | null;
+  topicTags:   string[] | null;
 };
 
 type Props = {
@@ -49,8 +51,14 @@ export function ArticlesDrawer({ isOpen, onClose, articles }: Props) {
           {articles.map((article, i) => (
             <div
               key={i}
-              className="px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 last:border-0"
+              className="flex gap-3 px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 last:border-0"
             >
+              {/* Numeric index */}
+              <span className="shrink-0 text-xs font-mono text-zinc-400 dark:text-zinc-600 w-5 pt-0.5 text-right select-none">
+                {i + 1}
+              </span>
+
+              <div className="flex-1 min-w-0">
               <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-1">
                 {article.feedName ?? "Unknown source"}
                 {article.publishedAt && (
@@ -77,6 +85,21 @@ export function ArticlesDrawer({ isOpen, onClose, articles }: Props) {
                   {article.title ?? "Untitled"}
                 </p>
               )}
+              {(article.geoTags?.length || article.topicTags?.length) ? (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {article.geoTags?.map((tag) => (
+                    <span key={tag} className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                  {article.topicTags?.map((tag) => (
+                    <span key={tag} className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              </div>
             </div>
           ))}
         </div>
