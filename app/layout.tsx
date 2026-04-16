@@ -50,7 +50,7 @@ export default async function RootLayout({
       lang="en"
       className={`${geistSans.variable} h-full antialiased${initialDark ? " dark" : ""}`}
     >
-      <body className="h-full flex flex-col">
+      <body className="h-full flex flex-col overscroll-none">
         <ThemeProvider theme={theme} />
         <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-2.5">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
