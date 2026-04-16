@@ -86,7 +86,7 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
           {slides.map(({ topicKey, label, geoTags, topicTags, articleCount, articles, cachedContent, cachedDiff, cachedAt, cachedHeadline }, i) => (
             <div
               key={topicKey}
-              className="absolute top-0 left-0 w-full h-full overflow-y-auto overflow-x-hidden"
+              className="absolute top-0 left-0 w-full h-full overflow-y-auto overflow-x-hidden overscroll-none"
               style={{
                 transform:  `translateX(calc(${(i - index) * 100}% + ${dragX}px))`,
                 transition: dragging ? "none" : "transform 300ms ease-in-out",
