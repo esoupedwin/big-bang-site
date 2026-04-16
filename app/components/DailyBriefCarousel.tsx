@@ -118,9 +118,14 @@ export function DailyBriefCarousel({ slides }: { slides: TopicSlide[] }) {
     const now = performance.now();
     const dt  = now - lastTime.current;
 
-    // Lock direction once the finger has moved 5px in either axis
-    if (dirLock.current === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-      dirLock.current = Math.abs(dx) >= Math.abs(dy) ? "h" : "v";
+    // Lock direction once the finger has moved 12px from origin.
+    // Horizontal lock requires |dx| >= 2×|dy| (within ~27° of horizontal)
+    // so diagonal and near-vertical movements always route to vertical scroll.
+    if (dirLock.current === null) {
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist >= 12) {
+        dirLock.current = Math.abs(dx) >= Math.abs(dy) * 2 ? "h" : "v";
+      }
     }
     if (dirLock.current !== "h") return;
 
