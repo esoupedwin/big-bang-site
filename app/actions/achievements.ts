@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getUserIdByEmail } from "@/lib/coverages";
 import { awardAchievement, type Achievement } from "@/lib/achievements";
@@ -11,5 +12,7 @@ export async function awardAchievementAction(key: string): Promise<Achievement |
   const userId = await getUserIdByEmail(session.user.email);
   if (!userId) return null;
 
-  return awardAchievement(userId, key);
+  const earned = await awardAchievement(userId, key);
+  if (earned) revalidatePath("/profile/badges");
+  return earned;
 }
