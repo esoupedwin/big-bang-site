@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { addCoverageAction, updateCoverageAction, removeCoverageAction } from "@/app/actions/coverages";
 import type { UserCoverage } from "@/lib/coverages";
+import type { Achievement } from "@/lib/achievements";
+import { AchievementToast } from "./AchievementToast";
 
 type Props = {
   coverages: UserCoverage[];
@@ -11,22 +13,24 @@ type Props = {
 };
 
 export function CoverageSettingsClient({ coverages, geoTags, topicTags }: Props) {
-  const [showForm,     setShowForm]     = useState(false);
-  const [expandedId,   setExpandedId]   = useState<string | null>(null);
-  const [pending,      setPending]      = useState(false);
-  const [labelValue,   setLabelValue]   = useState("");
-  const [priorities,   setPriorities]   = useState("");
-  const [hasGenerated, setHasGenerated] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [showForm,       setShowForm]       = useState(false);
+  const [expandedId,     setExpandedId]     = useState<string | null>(null);
+  const [pending,        setPending]        = useState(false);
+  const [labelValue,     setLabelValue]     = useState("");
+  const [priorities,     setPriorities]     = useState("");
+  const [hasGenerated,   setHasGenerated]   = useState(false);
+  const [isGenerating,   setIsGenerating]   = useState(false);
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
 
   async function handleAdd(formData: FormData) {
     setPending(true);
-    await addCoverageAction(formData);
+    const earned = await addCoverageAction(formData);
     setPending(false);
     setShowForm(false);
     setLabelValue("");
     setPriorities("");
     setHasGenerated(false);
+    if (earned) setNewAchievement(earned);
   }
 
   async function handleLabelBlur() {
@@ -54,6 +58,12 @@ export function CoverageSettingsClient({ coverages, geoTags, topicTags }: Props)
 
   return (
     <div className="space-y-6">
+      {newAchievement && (
+        <AchievementToast
+          achievement={newAchievement}
+          onDismiss={() => setNewAchievement(null)}
+        />
+      )}
       {/* Coverage list */}
       <div className="space-y-2">
         {coverages.length === 0 && (

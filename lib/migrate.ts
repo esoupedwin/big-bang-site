@@ -6,10 +6,19 @@ import { BRIEF_TOPICS } from "./brief";
  * Safe to call on every request — each statement uses IF NOT EXISTS / DO NOTHING guards.
  */
 export async function runMigrations(): Promise<void> {
-  // Ensure column exists
   await sql`
     ALTER TABLE user_coverages
       ADD COLUMN IF NOT EXISTS priorities TEXT
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_achievements (
+      id              SERIAL PRIMARY KEY,
+      user_id         TEXT        NOT NULL,
+      achievement_key TEXT        NOT NULL,
+      earned_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (user_id, achievement_key)
+    )
   `;
 
   // Backfill priorities for rows seeded from defaults before this column existed.
