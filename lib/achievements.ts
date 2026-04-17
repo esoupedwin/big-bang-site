@@ -15,6 +15,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: "Created your first coverage",
     icon:        "🗺️",
   },
+  {
+    key:         "synthesize_master",
+    title:       "Synthesize Master",
+    description: "Used the Synthesize feature on the Explore page",
+    icon:        "🧠",
+  },
 ];
 
 /** Returns the Achievement if it was newly awarded, null if already held. */

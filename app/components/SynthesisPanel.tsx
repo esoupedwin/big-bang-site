@@ -4,6 +4,9 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { buildFocusParts } from "@/lib/prompts";
 import { EntryInput } from "@/lib/types";
+import { awardAchievementAction } from "@/app/actions/achievements";
+import type { Achievement } from "@/lib/achievements";
+import { AchievementToast } from "./AchievementToast";
 
 type Props = {
   entries: EntryInput[];
@@ -12,9 +15,10 @@ type Props = {
 };
 
 export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: Props) {
-  const [synthesis, setSynthesis] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [synthesis,      setSynthesis]      = useState("");
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState("");
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
 
   async function handleSynthesize() {
     setSynthesis("");
@@ -43,6 +47,11 @@ export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: 
         if (done) break;
         setSynthesis((prev) => prev + decoder.decode(value, { stream: true }));
       }
+
+      // Award achievement on first successful synthesis (fire-and-forget)
+      awardAchievementAction("synthesize_master").then((earned) => {
+        if (earned) setNewAchievement(earned);
+      });
     } catch {
       setError("An unexpected error occurred.");
     } finally {
@@ -54,6 +63,12 @@ export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: 
 
   return (
     <div className="mt-4">
+      {newAchievement && (
+        <AchievementToast
+          achievement={newAchievement}
+          onDismiss={() => setNewAchievement(null)}
+        />
+      )}
       <button
         onClick={handleSynthesize}
         disabled={loading || entries.length === 0}
