@@ -14,21 +14,19 @@ const TEXT_KEY     = (k: string) => `additional-info:${k}`;
 const IMAGES_KEY   = (k: string) => `additional-info-images:${k}`;
 const CONCEPTS_KEY = (k: string) => `additional-info-concepts:${k}`;
 
-/** Returns true when the current page load is a hard refresh (Ctrl+F5 / Cmd+Shift+R). */
-function isHardRefresh(): boolean {
-  if (typeof window === "undefined") return false;
-  const entries = performance.getEntriesByType("navigation");
-  if (!entries.length) return false;
-  return (entries[0] as PerformanceNavigationTiming).type === "reload";
-}
+// Evaluated once at module load — navigation type never changes mid-session.
+const IS_HARD_REFRESH: boolean =
+  typeof window !== "undefined" &&
+  (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined)
+    ?.type === "reload";
 
 function readSession(key: string): string {
-  if (isHardRefresh()) return "";
+  if (IS_HARD_REFRESH) return "";
   return sessionStorage.getItem(key) ?? "";
 }
 
 function readSessionImages(topicKey: string): Record<string, string> {
-  if (isHardRefresh()) return {};
+  if (IS_HARD_REFRESH) return {};
   try {
     const raw = sessionStorage.getItem(IMAGES_KEY(topicKey));
     return raw ? (JSON.parse(raw) as Record<string, string>) : {};
@@ -88,7 +86,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
   // ── Personalities ──────────────────────────────────────────────────────────
   const [triggered,      setTriggered]      = useState(() => {
     if (typeof window === "undefined") return false;
-    return !isHardRefresh() && !!sessionStorage.getItem(TEXT_KEY(topicKey));
+    return !IS_HARD_REFRESH && !!sessionStorage.getItem(TEXT_KEY(topicKey));
   });
   const [personText,     setPersonText]     = useState(() =>
     typeof window !== "undefined" ? readSession(TEXT_KEY(topicKey)) : ""
@@ -102,7 +100,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
   // ── Concepts ───────────────────────────────────────────────────────────────
   const [conceptTriggered, setConceptTriggered] = useState(() => {
     if (typeof window === "undefined") return false;
-    return !isHardRefresh() && !!sessionStorage.getItem(CONCEPTS_KEY(topicKey));
+    return !IS_HARD_REFRESH && !!sessionStorage.getItem(CONCEPTS_KEY(topicKey));
   });
   const [conceptText,    setConceptText]    = useState(() =>
     typeof window !== "undefined" ? readSession(CONCEPTS_KEY(topicKey)) : ""
@@ -120,9 +118,8 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxImg]);
 
-  // ── Hard-refresh: purge all cached entries ─────────────────────────────────
   useEffect(() => {
-    if (isHardRefresh()) {
+    if (IS_HARD_REFRESH) {
       sessionStorage.removeItem(TEXT_KEY(topicKey));
       sessionStorage.removeItem(IMAGES_KEY(topicKey));
       sessionStorage.removeItem(CONCEPTS_KEY(topicKey));
@@ -223,7 +220,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
     if (personLoading || !personText) return;
     if (sessionStorage.getItem(IMAGES_KEY(topicKey))) return;
 
-    const names = [...personText.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
+    const names = [...new Set([...personText.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim()))];
     if (names.length === 0) return;
 
     Promise.all(
@@ -250,8 +247,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
 
   if (!content) return null;
 
-  const personDone   = !personLoading  && (!!personText  || !!personError);
-  const conceptsDone = !conceptLoading && (!!conceptText || !!conceptError);
+  const personDone = !personLoading && (!!personText || !!personError);
 
   return (
     <>

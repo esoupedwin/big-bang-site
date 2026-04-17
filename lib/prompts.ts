@@ -1,5 +1,8 @@
-export const SYNTHESIS_MODEL = "gpt-5.4";
-export const HEADLINE_MODEL   = "gpt-5.4-mini";
+export const SYNTHESIS_MODEL     = "gpt-5.4";
+export const HEADLINE_MODEL      = "gpt-5.4-mini";
+export const PERSONALITIES_MODEL = "gpt-5.4-mini";
+export const CONCEPTS_MODEL      = "gpt-5.4-nano";
+export const PRIORITIES_MODEL    = "gpt-5.4-nano";
 
 export const HEADLINE_MARKER = "<!--BB_HEADLINE-->";
 export const DIFF_MARKER     = "<!--BB_DIFF-->";
@@ -69,6 +72,67 @@ export function buildFocusParts(geoTags: string[], topicTags: string[]): string[
     geoTags.length > 0 ? `Geography: ${geoTags.join(", ")}` : null,
     topicTags.length > 0 ? `Topics: ${topicTags.join(", ")}` : null,
   ].filter((v): v is string => v !== null);
+}
+
+export function buildPrioritiesPrompt(label: string): string {
+  return `Generate topic-specific priorities for a geopolitical intelligence brief covering: "${label}".
+
+Output rules:
+- Output ONLY bullet points (use - prefix)
+- 5–7 specific, actionable priorities
+- Each priority should guide what to focus on: key actors, locations, events, and indicators to track
+- Be concrete — name relevant actors, flashpoints, metrics, or thresholds worth watching
+- No preamble, no headers, no closing remarks — bullets only`;
+}
+
+export function buildPersonalitiesPrompt(label: string, content: string): string {
+  return `You are an intelligence analyst assistant. A user is reading a brief about: "${label}".
+
+Brief content:
+${content}
+
+Your task: Identify all significant personalities mentioned (or strongly implied) in this brief. For each one, use web search to retrieve the most current factual information, then write a structured profile.
+
+Format rules — for each personality, use exactly this structure:
+
+## [Full Name]
+
+**Background:** [Exactly 2 sentences of factual background — their role, position, and relevant history.]
+
+**Significance:** [Exactly 2 sentences explaining why this person matters specifically to this coverage topic and what their current involvement or stance is.]
+
+Output personality profiles only — no preamble, no conclusion, no extra commentary.`;
+}
+
+export function buildConceptsPrompt(label: string, content: string): string {
+  return `You are an intelligence analyst assistant. A user is reading a brief about: "${label}".
+
+Brief content:
+${content}
+
+Your task: Identify terms or concepts from this brief that meet ALL of the following criteria:
+1. Domain-specific — geopolitical, historical, legal, diplomatic, or doctrinal in nature
+2. Not widely understood by a general educated audience
+3. Context-dependent or easily misinterpreted without background knowledge
+
+Use web search to retrieve accurate, current information for each qualifying concept.
+
+DO NOT explain:
+- Common military or security terms (e.g. "naval blockade", "airstrike", "sanctions")
+- Well-known institutions or entities (e.g. "United Nations", "US Marines", "NATO", "Pentagon")
+- Generic or self-explanatory phrases (e.g. "ceasefire talks", "diplomatic ties", "trade deficit")
+- Concepts already described or implied by the topic title "${label}"
+- Person names (those are covered separately)
+
+Good examples of concepts worth explaining: "1992 Consensus", "Article 9 of the Japanese Constitution", "Five Eyes", "Monroe Doctrine", "AUKUS".
+
+For each qualifying concept, write exactly 2 sentences: what it is, and why it matters in this specific context.
+
+Format each entry as:
+## [Concept or Term]
+[2 sentences]
+
+If no concepts meet the criteria, output nothing. Output concept entries only — no preamble, no conclusion, no bullet points.`;
 }
 
 export const SYNTHESIS_SYSTEM_PROMPT = `
