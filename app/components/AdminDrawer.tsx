@@ -20,6 +20,8 @@ export function AdminDrawer({ isOpen, onClose }: Props) {
   const [latestFetchCount, setLatestFetchCount] = useState<number | null>(null);
   const [totalCount,       setTotalCount]       = useState<number | null>(null);
   const [loading,          setLoading]          = useState(false);
+  const [resetting,        setResetting]        = useState(false);
+  const [resetDone,        setResetDone]        = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -69,6 +71,30 @@ export function AdminDrawer({ isOpen, onClose }: Props) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          {/* Reset achievements */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-2">
+              Achievements
+            </p>
+            <button
+              onClick={async () => {
+                setResetting(true);
+                setResetDone(false);
+                await fetch("/api/admin/reset-achievements", { method: "DELETE" });
+                setResetting(false);
+                setResetDone(true);
+              }}
+              disabled={resetting}
+              className="px-3 py-1.5 text-xs font-medium rounded border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {resetting ? "Resetting…" : "Reset My Achievements"}
+            </button>
+            {resetDone && (
+              <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">All achievements cleared.</p>
+            )}
+          </div>
+
+          <hr className="border-zinc-200 dark:border-zinc-800" />
           {loading ? (
             <p className="text-sm text-zinc-400 dark:text-zinc-500 animate-pulse">Loading…</p>
           ) : (
