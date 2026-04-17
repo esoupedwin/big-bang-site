@@ -17,7 +17,7 @@ function pageHref(page: number, selectedGeoTags: string[], selectedTopicTags: st
   selectedTopicTags.forEach((t) => params.append("topic", t));
   if (showMisc) params.set("show_misc", "1");
   params.set("page", String(page));
-  return `/?${params.toString()}`;
+  return `/explore?${params.toString()}`;
 }
 
 export function PageNav({ page, totalPages, selectedGeoTags, selectedTopicTags, showMisc }: PageNavProps) {

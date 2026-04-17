@@ -29,7 +29,7 @@ export function TagFilter({ geoTags, topicTags }: Props) {
       [...current, value].forEach((v) => params.append(param, v));
     }
     params.delete("page");
-    router.push(`/?${params.toString()}`);
+    router.push(`/explore?${params.toString()}`);
   }
 
   return (

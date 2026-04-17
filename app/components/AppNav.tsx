@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { label: "Daily Brief", href: "/daily-brief" },
-  { label: "Explore",     href: "/"             },
+  { label: "Explore",     href: "/explore"      },
 ];
 
 export function AppNav() {
@@ -15,7 +15,7 @@ export function AppNav() {
     <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
       <div className="flex justify-center">
         {TABS.map(({ label, href }) => {
-          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const active = pathname.startsWith(href);
           return (
             <Link
               key={href}

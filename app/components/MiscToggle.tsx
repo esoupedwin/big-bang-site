@@ -15,7 +15,7 @@ export function MiscToggle() {
       params.set("show_misc", "1");
     }
     params.delete("page");
-    router.push(`/?${params.toString()}`);
+    router.push(`/explore?${params.toString()}`);
   }
 
   return (
