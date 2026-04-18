@@ -1,10 +1,24 @@
+"use client";
+
+import { useState } from "react";
 import { FeedEntry } from "@/lib/feed";
 import { CollapsibleText } from "./CollapsibleText";
 import { FetchedAtPopover } from "./FetchedAtPopover";
+import { trackArticleClickAction } from "@/app/actions/achievements";
+import type { Achievement } from "@/lib/achievements";
+import { AchievementToast } from "./AchievementToast";
 
 export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
+
   return (
     <li className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
+      {newAchievement && (
+        <AchievementToast
+          achievement={newAchievement}
+          onDismiss={() => setNewAchievement(null)}
+        />
+      )}
       <div className="flex items-center gap-2 mb-1">
         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
           {entry.feed_name}
@@ -28,6 +42,11 @@ export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
         target="_blank"
         rel="noopener noreferrer"
         className="text-lg font-semibold text-zinc-900 dark:text-white hover:underline"
+        onClick={() => {
+          trackArticleClickAction().then((earned) => {
+            if (earned) setNewAchievement(earned);
+          });
+        }}
       >
         {entry.title}
       </a>

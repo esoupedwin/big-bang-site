@@ -21,6 +21,16 @@ export async function runMigrations(): Promise<void> {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_stats (
+      id       SERIAL PRIMARY KEY,
+      user_id  TEXT    NOT NULL,
+      stat_key TEXT    NOT NULL,
+      value    INTEGER NOT NULL DEFAULT 0,
+      UNIQUE (user_id, stat_key)
+    )
+  `;
+
   // Backfill priorities for rows seeded from defaults before this column existed.
   // Only touches rows where priorities IS NULL and the label matches a default topic.
   for (const t of BRIEF_TOPICS) {

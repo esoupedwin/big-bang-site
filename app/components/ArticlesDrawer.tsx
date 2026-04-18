@@ -1,5 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import { trackArticleClickAction } from "@/app/actions/achievements";
+import type { Achievement } from "@/lib/achievements";
+import { AchievementToast } from "./AchievementToast";
+
 export type ArticleRef = {
   title:       string | null;
   link:        string | null;
@@ -16,8 +21,16 @@ type Props = {
 };
 
 export function ArticlesDrawer({ isOpen, onClose, articles }: Props) {
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
+
   return (
     <>
+      {newAchievement && (
+        <AchievementToast
+          achievement={newAchievement}
+          onDismiss={() => setNewAchievement(null)}
+        />
+      )}
       {/* Backdrop — click outside to close */}
       <div
         className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
@@ -77,6 +90,11 @@ export function ArticlesDrawer({ isOpen, onClose, articles }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-zinc-800 dark:text-zinc-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors leading-snug"
+                  onClick={() => {
+                    trackArticleClickAction().then((earned) => {
+                      if (earned) setNewAchievement(earned);
+                    });
+                  }}
                 >
                   {article.title ?? "Untitled"}
                 </a>

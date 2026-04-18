@@ -21,6 +21,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: "Used the Synthesize feature on the Explore page",
     icon:        "🧠",
   },
+  {
+    key:         "news_scanner",
+    title:       "News Scanner",
+    description: "Opened 5 article links from the Daily Brief or Explore",
+    icon:        "📰",
+  },
 ];
 
 /** Returns the Achievement if it was newly awarded, null if already held. */
