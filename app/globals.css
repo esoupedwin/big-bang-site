@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Prevent white flash before React hydrates */
+html { background-color: #09090b; }
+
 /* Class-based dark mode — controlled by ThemeProvider */
 @custom-variant dark (&:where(.dark, .dark *));
 

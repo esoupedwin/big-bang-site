@@ -6,6 +6,7 @@ import { AuthHeader } from "./components/AuthHeader";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AppNav } from "./components/AppNav";
 import { AdminTrigger } from "./components/AdminTrigger";
+import { InitialLoader } from "./components/InitialLoader";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { getUserPreferences, type Theme } from "@/lib/preferences";
@@ -51,6 +52,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} h-full antialiased${initialDark ? " dark" : ""}`}
     >
       <body className="h-full flex flex-col overscroll-none">
+        <InitialLoader />
         <ThemeProvider theme={theme} />
         <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-2.5">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
