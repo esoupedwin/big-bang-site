@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString("en-GB", {
@@ -22,6 +23,8 @@ export function AdminDrawer({ isOpen, onClose }: Props) {
   const [loading,          setLoading]          = useState(false);
   const [resetting,        setResetting]        = useState(false);
   const [resetDone,        setResetDone]        = useState(false);
+  const [onboardingReset,  setOnboardingReset]  = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -92,6 +95,25 @@ export function AdminDrawer({ isOpen, onClose }: Props) {
             {resetDone && (
               <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">All achievements cleared.</p>
             )}
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-2">
+              Onboarding
+            </p>
+            <button
+              onClick={async () => {
+                setOnboardingReset(true);
+                await fetch("/api/admin/reset-onboarding", { method: "DELETE" });
+                setOnboardingReset(false);
+                onClose();
+                router.push("/onboarding");
+              }}
+              disabled={onboardingReset}
+              className="px-3 py-1.5 text-xs font-medium rounded border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {onboardingReset ? "Redirecting…" : "View Onboarding"}
+            </button>
           </div>
 
           <hr className="border-zinc-200 dark:border-zinc-800" />
