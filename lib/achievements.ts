@@ -27,6 +27,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: "Opened 5 article links from the Daily Brief or Explore",
     icon:        "📰",
   },
+  {
+    key:         "details_matter",
+    title:       "Details Matter",
+    description: "Opened 15 article links from the Daily Brief or Explore",
+    icon:        "🔍",
+  },
 ];
 
 /** Returns the Achievement if it was newly awarded, null if already held. */
