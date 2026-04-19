@@ -1,12 +1,18 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { googleSignIn } from "./actions/auth";
+import { runMigrations } from "@/lib/migrate";
+import { isOnboardingCompleted } from "@/lib/preferences";
 import { AsciiAnimation } from "./components/AsciiAnimation";
 import { GoogleIcon } from "./components/GoogleIcon";
 
 export default async function Home() {
   const session = await auth();
-  if (session) redirect("/daily-brief");
+  if (session?.user?.email) {
+    await runMigrations();
+    const done = await isOnboardingCompleted(session.user.email);
+    redirect(done ? "/daily-brief" : "/onboarding");
+  }
 
   return (
     <main className="relative flex-1 overflow-hidden bg-white dark:bg-zinc-950">

@@ -22,6 +22,25 @@ export async function getUserPreferences(email: string): Promise<UserPreferences
   return { user_id, theme: "system" };
 }
 
+export async function isOnboardingCompleted(email: string): Promise<boolean> {
+  const rows = await sql`
+    SELECT p.onboarding_completed
+    FROM user_preferences p
+    JOIN users u ON p.user_id = u.id
+    WHERE u.email = ${email}
+  `;
+  return (rows[0]?.onboarding_completed as boolean) ?? false;
+}
+
+export async function markOnboardingCompleted(email: string): Promise<void> {
+  await sql`
+    INSERT INTO user_preferences (user_id, onboarding_completed)
+    SELECT id, TRUE FROM users WHERE email = ${email}
+    ON CONFLICT (user_id) DO UPDATE
+      SET onboarding_completed = TRUE, updated_at = NOW()
+  `;
+}
+
 export async function upsertUserPreferences(
   email: string,
   theme: Theme
