@@ -16,7 +16,7 @@ export async function DELETE() {
 
   await Promise.all([
     sql`DELETE FROM user_achievements WHERE user_id = ${userId}`,
-    sql`DELETE FROM user_stats WHERE user_id = ${userId}`,
+    sql`UPDATE user_stats SET value = 0 WHERE user_id = ${userId} AND stat_key = 'article_clicks'`,
   ]);
   revalidatePath("/profile/badges");
 
