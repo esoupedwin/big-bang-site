@@ -93,6 +93,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
   );
   const [personLoading,  setPersonLoading]  = useState(false);
   const [personError,    setPersonError]    = useState("");
+  const [personRetry,    setPersonRetry]    = useState(0);
   const [wikiImages,     setWikiImages]     = useState<Record<string, string>>(() =>
     typeof window !== "undefined" ? readSessionImages(topicKey) : {}
   );
@@ -107,6 +108,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
   );
   const [conceptLoading, setConceptLoading] = useState(false);
   const [conceptError,   setConceptError]   = useState("");
+  const [conceptRetry,   setConceptRetry]   = useState(0);
 
   // ── Lightbox ───────────────────────────────────────────────────────────────
   const [lightboxImg, setLightboxImg] = useState<{ url: string; name: string } | null>(null);
@@ -168,7 +170,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
     );
 
     return () => { signal.cancelled = true; };
-  }, [triggered, label, content, topicKey]);
+  }, [triggered, label, content, topicKey, personRetry]);
 
   // ── Concepts sentinel: arm only after personalities have fully loaded ────────
   useEffect(() => {
@@ -213,7 +215,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
     );
 
     return () => { signal.cancelled = true; };
-  }, [conceptTriggered, label, content, topicKey]);
+  }, [conceptTriggered, label, content, topicKey, conceptRetry]);
 
   // ── Wikipedia profile pics (after personalities stream finishes) ────────────
   useEffect(() => {
@@ -361,7 +363,22 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
             )}
 
             {personError && (
-              <p className="text-xs text-red-500 dark:text-red-400">{personError}</p>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-red-500 dark:text-red-400">{personError}</p>
+                <button
+                  onClick={() => {
+                    sessionStorage.removeItem(TEXT_KEY(topicKey));
+                    sessionStorage.removeItem(IMAGES_KEY(topicKey));
+                    setPersonError("");
+                    setPersonText("");
+                    setWikiImages({});
+                    setPersonRetry(r => r + 1);
+                  }}
+                  className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline underline-offset-2 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
             )}
 
             {personDone && !personError && (
@@ -423,7 +440,20 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
             )}
 
             {conceptError && (
-              <p className="text-xs text-red-500 dark:text-red-400">{conceptError}</p>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-red-500 dark:text-red-400">{conceptError}</p>
+                <button
+                  onClick={() => {
+                    sessionStorage.removeItem(CONCEPTS_KEY(topicKey));
+                    setConceptError("");
+                    setConceptText("");
+                    setConceptRetry(r => r + 1);
+                  }}
+                  className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline underline-offset-2 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
             )}
           </div>
         )}
