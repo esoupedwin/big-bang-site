@@ -14,7 +14,10 @@ export async function DELETE() {
   const userId = await getUserIdByEmail(session!.user!.email!);
   if (!userId) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  await sql`DELETE FROM user_achievements WHERE user_id = ${userId}`;
+  await Promise.all([
+    sql`DELETE FROM user_achievements WHERE user_id = ${userId}`,
+    sql`DELETE FROM user_stats WHERE user_id = ${userId}`,
+  ]);
   revalidatePath("/profile/badges");
 
   return NextResponse.json({ ok: true });

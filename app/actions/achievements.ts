@@ -35,7 +35,7 @@ export async function trackArticleClickAction(): Promise<Achievement | null> {
     `;
 
     const count = rows[0]?.value as number;
-    if (count === 5) {
+    if (count >= 5) {
       const earned = await awardAchievement(userId, "news_scanner");
       if (earned) revalidatePath("/profile/badges");
       return earned;
