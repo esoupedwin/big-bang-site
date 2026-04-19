@@ -57,7 +57,7 @@ export function AnalyticalTakeSection({ topicKey, label, content, diff }: Props)
   return (
     <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
       <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-2">
-        Analytical Take
+        Developments Over Time
       </p>
 
       {loading && !text && (

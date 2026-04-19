@@ -194,13 +194,18 @@ Output Structure:
 `;
 
 export function buildAnalyticalTakePrompt(label: string, content: string, diff: string | null): string {
-  return `You are a geopolitical intelligence analyst. Based on the intelligence brief below, produce a concise analytical take.
+  return `You are a geopolitical intelligence analyst. Based on the intelligence brief below, produce a concise "Developments Over Time" summary.
 
 Coverage focus: "${label}"
 
 Current brief:
 ${content}
-${diff ? `\nRecent changes:\n${diff}` : ""}
+${diff ? `\nRecorded changes since last brief:\n${diff}` : ""}
 
-Write exactly 3–4 sentences of analytical commentary. Focus on trajectory, underlying dynamics, and what the developments signal — not just what happened. Be direct and insight-driven. No headers, no bullet points, no preamble.`;
+Write exactly 2 short paragraphs — no headers, no bullet points, no preamble:
+
+Paragraph 1 — Changes over time: Briefly summarise how the situation has evolved, directly referencing the recorded developments above.
+Paragraph 2 — Trajectory: A concise analytical take on where things are heading and what the pattern signals.
+
+Keep both paragraphs tight — 2 sentences each maximum.`;
 }
