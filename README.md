@@ -245,7 +245,7 @@ Append-only log of every generation.
 | `content`, `diff_summary`, `headline` | `TEXT` | |
 | `article_ids` | `TEXT[]` | |
 | `article_count` | `INT` | |
-| `created_at` | `TIMESTAMPTZ` | |
+| `generated_at` | `TIMESTAMPTZ` | |
 
 ---
 

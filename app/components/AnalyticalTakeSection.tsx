@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { BriefHistoryDrawer } from "./BriefHistoryDrawer";
 
 type Props = {
   topicKey:    string;
@@ -17,7 +19,6 @@ function readCache(topicKey: string, generatedAt: string): string {
 }
 
 function writeCache(topicKey: string, generatedAt: string, value: string) {
-  // Clear any stale entries for this topic before writing the new one
   Object.keys(sessionStorage)
     .filter((k) => k.startsWith(CACHE_PREFIX(topicKey)))
     .forEach((k) => sessionStorage.removeItem(k));
@@ -27,21 +28,23 @@ function writeCache(topicKey: string, generatedAt: string, value: string) {
 export function AnalyticalTakeSection({ topicKey, label, content, generatedAt }: Props) {
   const cacheTs = generatedAt ?? "none";
 
-  const [text,    setText]    = useState(() =>
-    typeof window !== "undefined" ? readCache(topicKey, cacheTs) : ""
-  );
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
-  const [retry,   setRetry]   = useState(0);
+  const [text,          setText]          = useState("");
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState("");
+  const [historyOpen,   setHistoryOpen]   = useState(false);
 
+  // Rehydrate from sessionStorage after mount (useState initializer runs on the
+  // server where window is undefined, so the cache read must happen in an effect).
   useEffect(() => {
-    if (readCache(topicKey, cacheTs)) return;
+    setText(readCache(topicKey, cacheTs));
+  }, [topicKey, cacheTs]);
 
-    const signal = { cancelled: false };
+  function generate() {
     setLoading(true);
     setText("");
     setError("");
 
+    const signal = { cancelled: false };
     let accumulated = "";
 
     fetch("/api/coverage/analytical-take", {
@@ -59,18 +62,47 @@ export function AnalyticalTakeSection({ topicKey, label, content, generatedAt }:
           accumulated += decoder.decode(value, { stream: true });
           setText(accumulated);
         }
-        if (!signal.cancelled && accumulated) writeCache(topicKey, cacheTs, accumulated);
+        if (signal.cancelled) return;
+        if (accumulated) {
+          writeCache(topicKey, cacheTs, accumulated);
+        } else {
+          setError("Failed to generate.");
+        }
         setLoading(false);
       })
       .catch(() => { if (!signal.cancelled) { setError("Failed to generate."); setLoading(false); } });
-
-    return () => { signal.cancelled = true; };
-  }, [topicKey, label, content, cacheTs, retry]);
+  }
 
   return (
+    <>
+    <BriefHistoryDrawer
+      isOpen={historyOpen}
+      onClose={() => setHistoryOpen(false)}
+      topicKey={topicKey}
+    />
     <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-2">
-        Developments Over Time
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          Developments Over Time
+        </p>
+        {!text && !loading && !error ? (
+          <button
+            onClick={generate}
+            className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-0.5 transition-colors"
+          >
+            Generate
+          </button>
+        ) : (
+          <button
+            onClick={() => setHistoryOpen(true)}
+            className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-0.5 transition-colors"
+          >
+            View Past Developments
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2">
+        How this coverage has evolved over time, and where it's heading.
       </p>
 
       {loading && !text && (
@@ -81,19 +113,43 @@ export function AnalyticalTakeSection({ topicKey, label, content, generatedAt }:
       )}
 
       {(text || loading) && (
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
-          {text}
+        <div className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+          <ReactMarkdown
+            components={{
+              h2: ({ children }) => (
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mt-4 mb-2 first:mt-0">
+                  {children}
+                </h2>
+              ),
+              ul: ({ children }) => <ul className="space-y-3 mb-3">{children}</ul>,
+              li: ({ children }) => (
+                <li className="flex gap-2 text-zinc-700 dark:text-zinc-300">
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
+                  <span className="leading-relaxed">{children}</span>
+                </li>
+              ),
+              p: ({ children }) => (
+                <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed mb-2">{children}</p>
+              ),
+              strong: ({ children }) => (
+                <span className="font-semibold text-zinc-900 dark:text-white">{children}</span>
+              ),
+              hr: () => null,
+            }}
+          >
+            {text}
+          </ReactMarkdown>
           {loading && (
             <span className="inline-block w-0.5 h-3.5 bg-zinc-400 dark:bg-zinc-500 animate-pulse ml-0.5 align-text-bottom" />
           )}
-        </p>
+        </div>
       )}
 
       {error && (
         <div className="flex items-center gap-3">
           <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
           <button
-            onClick={() => { setError(""); setText(""); setRetry(r => r + 1); }}
+            onClick={() => { setError(""); generate(); }}
             className="text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 underline underline-offset-2 transition-colors"
           >
             Retry
@@ -101,5 +157,6 @@ export function AnalyticalTakeSection({ topicKey, label, content, generatedAt }:
         </div>
       )}
     </div>
+    </>
   );
 }

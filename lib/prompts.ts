@@ -196,11 +196,11 @@ Output Structure:
 export function buildAnalyticalTakePrompt(
   label:   string,
   content: string,
-  history: { diff_summary: string; created_at: string }[]
+  history: { diff_summary: string; generated_at: string }[]
 ): string {
   const historyBlock = history.length > 0
     ? history.map((h, i) => {
-        const date = new Date(h.created_at).toLocaleString("en-GB", {
+        const date = new Date(h.generated_at).toLocaleString("en-GB", {
           day: "2-digit", month: "short", year: "numeric",
           hour: "2-digit", minute: "2-digit",
         });
@@ -208,9 +208,9 @@ export function buildAnalyticalTakePrompt(
       }).join("\n\n")
     : "No prior recorded developments.";
 
-  return `You are a geopolitical intelligence analyst. Produce a concise "Developments Over Time" summary for the coverage below.
+  return `You are a geopolitical intelligence analyst. Produce a "Developments Over Time" assessment for the coverage below.
 
-Coverage focus: "${label}"
+Coverage: ${label}
 
 Recorded developments over time (chronological sample):
 ${historyBlock}
@@ -218,10 +218,27 @@ ${historyBlock}
 Current brief:
 ${content}
 
-Write exactly 2 short paragraphs — no headers, no bullet points, no preamble:
+Output exactly three sections using the markdown format below. No preamble, no extra commentary.
 
-Paragraph 1 — Changes over time: Summarise how the situation has evolved across the recorded developments above, referencing specific shifts where relevant.
-Paragraph 2 — Trajectory: A concise analytical take on where things are heading and what the overall pattern signals.
+---
 
-Keep both paragraphs tight — 2 sentences each maximum.`;
+**Developments Over Time**
+
+- **[Date from source] — [Short development headline]**
+  [2 sentences: what happened, and why it represents a meaningful shift in the conflict/issue dynamics.]
+- **[Date] — [headline]**
+  [2 sentences]
+- (repeat for up to 5 entries, chronological order, draw from the recorded developments and current brief)
+
+**Trajectory**
+
+**Current trajectory:** [one-line assessment — e.g. "coercive bargaining under fragile partial de-escalation"]
+
+[3–5 sentences covering: whether the issue is escalating, stabilising, fragmenting, or entering negotiation; the main driver of the trajectory; the main constraint on that trajectory; what to watch next.]
+
+**Watchpoints**
+
+- [Specific indicator 1 — concrete and observable]
+- [Specific indicator 2]
+- [Specific indicator 3]`;
 }

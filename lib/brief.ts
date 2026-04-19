@@ -156,16 +156,16 @@ export async function setGeneratingStatus(topicKey: string, generating: boolean)
 
 export type BriefHistoryEntry = {
   diff_summary: string | null;
-  created_at:   string;
+  generated_at: string;
 };
 
 export async function getDailyBriefHistory(topicKey: string): Promise<BriefHistoryEntry[]> {
   const rows = await sql`
-    SELECT diff_summary, created_at
+    SELECT diff_summary, generated_at
     FROM   daily_brief_history
     WHERE  topic_key    = ${topicKey}
       AND  diff_summary IS NOT NULL
-    ORDER BY created_at ASC
+    ORDER BY generated_at ASC
   `;
   return rows as BriefHistoryEntry[];
 }
