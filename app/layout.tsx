@@ -18,8 +18,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "BIG BANG",
-  description: "Latest news articles",
+  title: "THIRD EYE",
+  description: "Track the global developments that matter most to you.",
 };
 
 export default async function RootLayout({

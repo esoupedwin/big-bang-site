@@ -1,4 +1,4 @@
-# Big Bang Site
+# Third Eye
 
 A Next.js geopolitical intelligence application. Articles are ingested and tagged by an external pipeline (INTERLINK) and stored in a shared Neon Postgres database. This app is read-only with respect to articles — it queries, analyses, and synthesises them using OpenAI.
 
@@ -8,7 +8,7 @@ A Next.js geopolitical intelligence application. Articles are ingested and tagge
 
 | Repo | Role |
 |---|---|
-| `big-bang-site` (this repo) | BIGBANG — Next.js web app |
+| `big-bang-site` (this repo) | Third Eye — Next.js web app |
 | `interlink` | INTERLINK — RSS ingestion and tagging service |
 | [`bigbang-interlink-sync`](https://github.com/esoupedwin/bigbang-interlink-sync) | Shared schema, data contracts, tag taxonomy |
 

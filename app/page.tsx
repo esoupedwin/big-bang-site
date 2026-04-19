@@ -14,10 +14,10 @@ export default async function Home() {
       <div className="absolute inset-0 flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <h1 className="text-5xl font-bold text-zinc-900 dark:text-white mb-3 tracking-tight">
-            BIG BANG
+            THIRD EYE
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mb-8 text-sm">
-            Geopolitical intelligence, synthesised from global news sources.
+            Track the global developments that matter most to you. See what changed. Understand why it matters. Stay ahead of what comes next.
           </p>
           <form action={googleSignIn}>
             <button

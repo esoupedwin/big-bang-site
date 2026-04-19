@@ -1,5 +1,5 @@
 {
-  "name": "BIGBANG",
+  "name": "Third Eye",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
   "postCreateCommand": "npm install && npm install -g @anthropic-ai/claude-code",
   "forwardPorts": [3000],
