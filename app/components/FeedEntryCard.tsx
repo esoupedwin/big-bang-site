@@ -45,7 +45,7 @@ export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
         onClick={() => {
           trackArticleClickAction().then((earned) => {
             if (earned) setNewAchievement(earned);
-          });
+          }).catch(() => {});
         }}
       >
         {entry.title}

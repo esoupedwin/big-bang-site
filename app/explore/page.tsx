@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getFeedEntries, PAGE_SIZE } from "@/lib/feed";
+import { runMigrations } from "@/lib/migrate";
 import { FeedEntryCard } from "../components/FeedEntryCard";
 import { MiscToggle } from "../components/MiscToggle";
 import { PageNav } from "../components/PageNav";
@@ -15,6 +16,8 @@ export default async function ExplorePage({
 }) {
   const session = await auth();
   if (!session) redirect("/");
+
+  await runMigrations();
 
   const { page: pageParam, geo, topic, show_misc } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);

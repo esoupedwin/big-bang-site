@@ -93,7 +93,7 @@ export function ArticlesDrawer({ isOpen, onClose, articles }: Props) {
                   onClick={() => {
                     trackArticleClickAction().then((earned) => {
                       if (earned) setNewAchievement(earned);
-                    });
+                    }).catch(() => {});
                   }}
                 >
                   {article.title ?? "Untitled"}
