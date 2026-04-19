@@ -13,5 +13,7 @@ export default async function OnboardingPage() {
   const completed = await isOnboardingCompleted(session.user.email);
   if (completed) redirect("/daily-brief");
 
-  return <OnboardingCarousel />;
+  const name = session.user.name ?? session.user.email.split("@")[0];
+
+  return <OnboardingCarousel userName={name} />;
 }

@@ -177,46 +177,71 @@ function Visual6() {
   );
 }
 
+// ─── Greeting visual ──────────────────────────────────────────────────────────
+
+function VisualGreeting({ name }: { name: string }) {
+  const first = name.split(" ")[0];
+  return (
+    <div className="flex flex-col items-center gap-5">
+      <div className="relative w-16 h-16 flex items-center justify-center">
+        <div className="absolute inset-0 rounded-full bg-zinc-800/60" />
+        <div className="absolute inset-2 rounded-full border border-zinc-600" />
+        <div className="absolute inset-5 rounded-full bg-zinc-300" />
+        <div className="absolute inset-7 rounded-full bg-zinc-950" />
+        <div className="absolute inset-0 rounded-full blur-xl bg-zinc-400/10" />
+      </div>
+      <p className="text-2xl font-semibold text-white tracking-tight">
+        Hello, {first}.
+      </p>
+    </div>
+  );
+}
+
 // ─── Slide definitions ────────────────────────────────────────────────────────
 
-const SLIDES = [
-  {
-    visual: <Visual1 />,
-    title:  "Start with what matters to you",
-    body:   "Choose issues you care about — conflicts, countries, or topics. Third Eye continuously tracks them for you.",
-  },
-  {
-    visual: <Visual2 />,
-    title:  "Get a daily brief",
-    body:   "Each coverage is summarised into key developments from the last 24 hours — ranked by importance.",
-  },
-  {
-    visual: <Visual3 />,
-    title:  "See what changed",
-    body:   "No need to reread everything. Third Eye highlights what changed since your last check — new actions, shifts, and signals.",
-  },
-  {
-    visual: <Visual4 />,
-    title:  "Track developments over time",
-    body:   "Generate a timeline of key developments to understand how the situation is evolving and where it may be heading.",
-  },
-  {
-    visual: <Visual5 />,
-    title:  "Explore and go deeper",
-    body:   "Read source articles, filter by topic or geography, and generate focused analysis from the news that matters to you.",
-  },
-  {
-    visual: <Visual6 />,
-    title:  "Welcome to Third Eye",
-    body:   "The world hasn't slowed down. You just don't have to keep up the hard way anymore.",
-  },
-];
-
-const LAST = SLIDES.length - 1;
+function buildSlides(userName: string) {
+  return [
+    {
+      visual: <VisualGreeting name={userName} />,
+      title:  "Good to have you here.",
+      body:   "The world moves fast. But keeping up doesn't have to be hard. Third Eye helps you keep up — by focusing only on what actually changed and what it means.",
+    },
+    {
+      visual: <Visual1 />,
+      title:  "Start with what matters to you",
+      body:   "Choose issues you care about — conflicts, countries, or topics. Third Eye continuously tracks them for you.",
+    },
+    {
+      visual: <Visual2 />,
+      title:  "Get a daily brief",
+      body:   "Each coverage is summarised into key developments from the last 24 hours — ranked by importance.",
+    },
+    {
+      visual: <Visual3 />,
+      title:  "See what changed",
+      body:   "No need to reread everything. Third Eye highlights what changed since your last check — new actions, shifts, and signals.",
+    },
+    {
+      visual: <Visual4 />,
+      title:  "Track developments over time",
+      body:   "Generate a timeline of key developments to understand how the situation is evolving and where it may be heading.",
+    },
+    {
+      visual: <Visual5 />,
+      title:  "Explore and go deeper",
+      body:   "Read source articles, filter by topic or geography, and generate focused analysis from the news that matters to you.",
+    },
+    {
+      visual: <Visual6 />,
+      title:  "Welcome to Third Eye",
+      body:   "The world hasn't slowed down. You just don't have to keep up the hard way anymore.",
+    },
+  ];
+}
 
 // ─── Carousel ─────────────────────────────────────────────────────────────────
 
-export function OnboardingCarousel() {
+export function OnboardingCarousel({ userName }: { userName: string }) {
   const router                = useRouter();
   const [pending, startTransition] = useTransition();
   const [current,  setCurrent]  = useState(0);
@@ -236,7 +261,9 @@ export function OnboardingCarousel() {
     });
   }
 
-  const slide = SLIDES[current];
+  const SLIDES = buildSlides(userName);
+  const LAST   = SLIDES.length - 1;
+  const slide  = SLIDES[current];
 
   return (
     <div className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col">
