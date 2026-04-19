@@ -193,19 +193,35 @@ Output Structure:
    - Concise analytical takeaway (no over-speculation)
 `;
 
-export function buildAnalyticalTakePrompt(label: string, content: string, diff: string | null): string {
-  return `You are a geopolitical intelligence analyst. Based on the intelligence brief below, produce a concise "Developments Over Time" summary.
+export function buildAnalyticalTakePrompt(
+  label:   string,
+  content: string,
+  history: { diff_summary: string; created_at: string }[]
+): string {
+  const historyBlock = history.length > 0
+    ? history.map((h, i) => {
+        const date = new Date(h.created_at).toLocaleString("en-GB", {
+          day: "2-digit", month: "short", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+        return `[${i + 1}] ${date}\n${h.diff_summary}`;
+      }).join("\n\n")
+    : "No prior recorded developments.";
+
+  return `You are a geopolitical intelligence analyst. Produce a concise "Developments Over Time" summary for the coverage below.
 
 Coverage focus: "${label}"
 
+Recorded developments over time (chronological sample):
+${historyBlock}
+
 Current brief:
 ${content}
-${diff ? `\nRecorded changes since last brief:\n${diff}` : ""}
 
 Write exactly 2 short paragraphs — no headers, no bullet points, no preamble:
 
-Paragraph 1 — Changes over time: Briefly summarise how the situation has evolved, directly referencing the recorded developments above.
-Paragraph 2 — Trajectory: A concise analytical take on where things are heading and what the pattern signals.
+Paragraph 1 — Changes over time: Summarise how the situation has evolved across the recorded developments above, referencing specific shifts where relevant.
+Paragraph 2 — Trajectory: A concise analytical take on where things are heading and what the overall pattern signals.
 
 Keep both paragraphs tight — 2 sentences each maximum.`;
 }

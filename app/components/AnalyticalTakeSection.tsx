@@ -6,7 +6,6 @@ type Props = {
   topicKey:    string;
   label:       string;
   content:     string;
-  diff:        string | null;
   generatedAt: string | null;
 };
 
@@ -25,7 +24,7 @@ function writeCache(topicKey: string, generatedAt: string, value: string) {
   sessionStorage.setItem(CACHE_KEY(topicKey, generatedAt), value);
 }
 
-export function AnalyticalTakeSection({ topicKey, label, content, diff, generatedAt }: Props) {
+export function AnalyticalTakeSection({ topicKey, label, content, generatedAt }: Props) {
   const cacheTs = generatedAt ?? "none";
 
   const [text,    setText]    = useState(() =>
@@ -48,7 +47,7 @@ export function AnalyticalTakeSection({ topicKey, label, content, diff, generate
     fetch("/api/coverage/analytical-take", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ label, content, diff }),
+      body:    JSON.stringify({ topicKey, label, content }),
     })
       .then(async (res) => {
         if (!res.ok || !res.body) { setError("Failed to generate."); setLoading(false); return; }
@@ -66,7 +65,7 @@ export function AnalyticalTakeSection({ topicKey, label, content, diff, generate
       .catch(() => { if (!signal.cancelled) { setError("Failed to generate."); setLoading(false); } });
 
     return () => { signal.cancelled = true; };
-  }, [topicKey, label, content, diff, cacheTs, retry]);
+  }, [topicKey, label, content, cacheTs, retry]);
 
   return (
     <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">

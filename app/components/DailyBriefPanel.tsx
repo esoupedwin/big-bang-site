@@ -389,7 +389,6 @@ export function DailyBriefPanel({
           topicKey={topicKey}
           label={label}
           content={content}
-          diff={diff}
           generatedAt={generatedAt}
         />
       )}

@@ -154,6 +154,29 @@ export async function setGeneratingStatus(topicKey: string, generating: boolean)
   }
 }
 
+export type BriefHistoryEntry = {
+  diff_summary: string | null;
+  created_at:   string;
+};
+
+export async function getDailyBriefHistory(topicKey: string): Promise<BriefHistoryEntry[]> {
+  const rows = await sql`
+    SELECT diff_summary, created_at
+    FROM   daily_brief_history
+    WHERE  topic_key    = ${topicKey}
+      AND  diff_summary IS NOT NULL
+    ORDER BY created_at ASC
+  `;
+  return rows as BriefHistoryEntry[];
+}
+
+export function sampleEvenly<T>(items: T[], n: number): T[] {
+  if (items.length <= n) return items;
+  return Array.from({ length: n }, (_, i) =>
+    items[Math.round(i * (items.length - 1) / (n - 1))]
+  );
+}
+
 export async function appendDailyBriefHistory(
   topicKey:    string,
   content:     string,
