@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 
@@ -14,7 +14,6 @@ const TEXT_KEY     = (k: string) => `additional-info:${k}`;
 const IMAGES_KEY   = (k: string) => `additional-info-images:${k}`;
 const CONCEPTS_KEY = (k: string) => `additional-info-concepts:${k}`;
 
-// Evaluated once at module load — navigation type never changes mid-session.
 const IS_HARD_REFRESH: boolean =
   typeof window !== "undefined" &&
   (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined)
@@ -35,7 +34,6 @@ function readSessionImages(topicKey: string): Record<string, string> {
   }
 }
 
-/** Pull plain text out of ReactMarkdown children (handles strings + nested elements). */
 function childrenToText(children: React.ReactNode): string {
   if (typeof children === "string") return children;
   if (Array.isArray(children)) return children.map(childrenToText).join("");
@@ -45,7 +43,6 @@ function childrenToText(children: React.ReactNode): string {
   return "";
 }
 
-/** Generic streaming fetch helper — streams into a state setter and saves to sessionStorage when done. */
 async function streamInto(
   url: string,
   body: object,
@@ -79,30 +76,27 @@ async function streamInto(
   }
 }
 
-export function AdditionalInfoSection({ topicKey, label, content }: Props) {
-  const sentinelRef        = useRef<HTMLDivElement>(null);
-  const conceptSentinelRef = useRef<HTMLDivElement>(null);
+const btnClass = "text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-0.5 transition-colors";
 
+export function AdditionalInfoSection({ topicKey, label, content }: Props) {
   // ── Personalities ──────────────────────────────────────────────────────────
-  const [triggered,      setTriggered]      = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !IS_HARD_REFRESH && !!sessionStorage.getItem(TEXT_KEY(topicKey));
-  });
-  const [personText,     setPersonText]     = useState(() =>
+  const [triggered,     setTriggered]     = useState(() =>
+    typeof window !== "undefined" && !IS_HARD_REFRESH && !!sessionStorage.getItem(TEXT_KEY(topicKey))
+  );
+  const [personText,    setPersonText]    = useState(() =>
     typeof window !== "undefined" ? readSession(TEXT_KEY(topicKey)) : ""
   );
-  const [personLoading,  setPersonLoading]  = useState(false);
-  const [personError,    setPersonError]    = useState("");
-  const [personRetry,    setPersonRetry]    = useState(0);
-  const [wikiImages,     setWikiImages]     = useState<Record<string, string>>(() =>
+  const [personLoading, setPersonLoading] = useState(false);
+  const [personError,   setPersonError]   = useState("");
+  const [personRetry,   setPersonRetry]   = useState(0);
+  const [wikiImages,    setWikiImages]    = useState<Record<string, string>>(() =>
     typeof window !== "undefined" ? readSessionImages(topicKey) : {}
   );
 
   // ── Concepts ───────────────────────────────────────────────────────────────
-  const [conceptTriggered, setConceptTriggered] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !IS_HARD_REFRESH && !!sessionStorage.getItem(CONCEPTS_KEY(topicKey));
-  });
+  const [conceptTriggered, setConceptTriggered] = useState(() =>
+    typeof window !== "undefined" && !IS_HARD_REFRESH && !!sessionStorage.getItem(CONCEPTS_KEY(topicKey))
+  );
   const [conceptText,    setConceptText]    = useState(() =>
     typeof window !== "undefined" ? readSession(CONCEPTS_KEY(topicKey)) : ""
   );
@@ -127,25 +121,6 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
       sessionStorage.removeItem(CONCEPTS_KEY(topicKey));
     }
   }, [topicKey]);
-
-  // ── IntersectionObserver: fire both fetches when sentinel enters view ───────
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || triggered || !content) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          observer.disconnect();
-          setTriggered(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [triggered, content]);
 
   // ── Fetch personalities ────────────────────────────────────────────────────
   useEffect(() => {
@@ -172,27 +147,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
     return () => { signal.cancelled = true; };
   }, [triggered, label, content, topicKey, personRetry]);
 
-  // ── Concepts sentinel: arm only after personalities have fully loaded ────────
-  useEffect(() => {
-    const el = conceptSentinelRef.current;
-    // Only start observing once personalities are done and concepts not yet triggered
-    if (!el || conceptTriggered || personLoading || !personText) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          observer.disconnect();
-          setConceptTriggered(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [conceptTriggered, personLoading, personText]);
-
-  // ── Fetch concepts once scroll-triggered ──────────────────────────────────
+  // ── Fetch concepts ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!conceptTriggered || !content) return;
     if (sessionStorage.getItem(CONCEPTS_KEY(topicKey))) return;
@@ -253,7 +208,6 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
 
   return (
     <>
-      {/* Lightbox — portalled to body so `fixed` is relative to the true viewport */}
       {lightboxImg && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
@@ -282,29 +236,30 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
         document.body
       )}
 
-      {/* Spacer — requires intentional scroll to reach this section */}
-      <div className="h-40" />
+      <div className="h-12" />
 
-      {/* ── Section wrapper ───────────────────────────────────────────────── */}
       <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-8">
-        <h3 className="text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-          Additional Info
-        </h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              Additional Info
+            </h3>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+              Learn more about the coverage. Learn about key personalities and concepts referenced in this coverage.
+            </p>
+          </div>
+          {!triggered && (
+            <button onClick={() => setTriggered(true)} className={btnClass}>
+              Generate
+            </button>
+          )}
+        </div>
 
-        {/* Sentinel: IntersectionObserver watches this element */}
-        <div ref={sentinelRef} />
-
-        {!triggered && (
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">
-            Scroll to load additional information…
-          </p>
-        )}
-
-        {/* ── Personalities segment ──────────────────────────────────────── */}
+        {/* ── Personalities ──────────────────────────────────────────────── */}
         {triggered && (
-          <div className="mb-30">
+          <div>
             <p className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-3">
-              Personalities mentioned:
+              Personalities mentioned
             </p>
 
             {personLoading && !personText && (
@@ -336,16 +291,12 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
                               {name.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
-                            {children}
-                          </h2>
+                          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">{children}</h2>
                         </div>
                       );
                     },
                     p: ({ children }) => (
-                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mb-2">
-                        {children}
-                      </p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mb-2">{children}</p>
                     ),
                     strong: ({ children }) => (
                       <span className="font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wide mr-1">
@@ -389,22 +340,23 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
           </div>
         )}
 
-        {/* ── Concepts segment — rendered once personalities are done ───── */}
+        {/* ── Concepts ───────────────────────────────────────────────────── */}
         {triggered && !personLoading && personText && (
           <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
-            <p className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-3">
-              Concepts mentioned:
-            </p>
-            <p className="text-xs text-zinc-300 dark:text-zinc-600 mt-3 mb-6">
-              Concepts that may require additional context or explanation are listed here.
-            </p>
-
-            {/* Sentinel: concepts fetch only fires when this scrolls into view */}
-            <div ref={conceptSentinelRef} />
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                Concepts mentioned
+              </p>
+              {!conceptTriggered && (
+                <button onClick={() => setConceptTriggered(true)} className={btnClass}>
+                  Load
+                </button>
+              )}
+            </div>
 
             {!conceptTriggered && (
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">
-                Scroll to load concept explanations…
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                Concepts that may require additional context or explanation.
               </p>
             )}
 
@@ -425,9 +377,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
                       </h2>
                     ),
                     p: ({ children }) => (
-                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                        {children}
-                      </p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{children}</p>
                     ),
                   }}
                 >
@@ -457,10 +407,8 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
             )}
           </div>
         )}
-
       </div>
 
-      {/* Bottom padding */}
       <div className="h-8" />
     </>
   );

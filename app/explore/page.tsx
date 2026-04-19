@@ -35,7 +35,7 @@ export default async function ExplorePage({
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">Explore</h1>
+        <h1 data-te-id="explore-heading" className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">Explore</h1>
 
         <Suspense fallback={<TagFilterSkeleton />}>
           <TagFilterAsync />

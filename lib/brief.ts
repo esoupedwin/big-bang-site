@@ -159,6 +159,16 @@ export type BriefHistoryEntry = {
   generated_at: string;
 };
 
+export async function getHistoryCount(topicKey: string): Promise<number> {
+  const rows = await sql`
+    SELECT COUNT(*) AS count
+    FROM   daily_brief_history
+    WHERE  topic_key    = ${topicKey}
+      AND  diff_summary IS NOT NULL
+  `;
+  return parseInt(rows[0].count as string, 10);
+}
+
 export async function getDailyBriefHistory(topicKey: string): Promise<BriefHistoryEntry[]> {
   const rows = await sql`
     SELECT diff_summary, generated_at

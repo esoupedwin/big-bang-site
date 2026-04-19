@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { BriefHistoryDrawer } from "./BriefHistoryDrawer";
 
+const DOT_MIN_HISTORY = 3;
+
 type Props = {
-  topicKey:    string;
-  label:       string;
-  content:     string;
-  generatedAt: string | null;
+  topicKey:     string;
+  label:        string;
+  content:      string;
+  generatedAt:  string | null;
+  historyCount: number;
 };
 
 const CACHE_KEY = (k: string, ts: string) => `analytical-take:${k}:${ts}`;
@@ -25,7 +28,7 @@ function writeCache(topicKey: string, generatedAt: string, value: string) {
   sessionStorage.setItem(CACHE_KEY(topicKey, generatedAt), value);
 }
 
-export function AnalyticalTakeSection({ topicKey, label, content, generatedAt }: Props) {
+export function AnalyticalTakeSection({ topicKey, label, content, generatedAt, historyCount }: Props) {
   const cacheTs = generatedAt ?? "none";
 
   const [text,          setText]          = useState("");
@@ -71,6 +74,27 @@ export function AnalyticalTakeSection({ topicKey, label, content, generatedAt }:
         setLoading(false);
       })
       .catch(() => { if (!signal.cancelled) { setError("Failed to generate."); setLoading(false); } });
+  }
+
+  const remaining = DOT_MIN_HISTORY - historyCount;
+  if (remaining > 0) {
+    return (
+      <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-1">
+          Developments Over Time
+        </p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2">
+          How this coverage has evolved over time, and where it's heading.
+        </p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          This feature activates once {DOT_MIN_HISTORY} developments have been tracked.{" "}
+          <span className="text-zinc-500 dark:text-zinc-400 font-medium">
+            {remaining} more {remaining === 1 ? "brief" : "briefs"} to go
+          </span>{" "}
+          — check back tomorrow.
+        </p>
+      </div>
+    );
   }
 
   return (

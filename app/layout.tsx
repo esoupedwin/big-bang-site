@@ -7,6 +7,7 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import { AppNav } from "./components/AppNav";
 import { AdminTrigger } from "./components/AdminTrigger";
 import { InitialLoader } from "./components/InitialLoader";
+import { AppTooltips } from "./components/AppTooltips";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { getUserPreferences, type Theme } from "@/lib/preferences";
@@ -63,6 +64,7 @@ export default async function RootLayout({
           </div>
         </header>
         {session && <AppNav />}
+        {session && <AppTooltips />}
         {children}
       </body>
     </html>

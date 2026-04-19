@@ -1,15 +1,20 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getDailyBriefEntries, getDailyBriefCache } from "@/lib/brief";
+import { getDailyBriefEntries, getDailyBriefCache, getHistoryCount } from "@/lib/brief";
 import { getUserIdByEmail, getUserCoverages, initializeUserCoverages, userCoverageToBriefTopic } from "@/lib/coverages";
 import { runMigrations } from "@/lib/migrate";
 import { DailyBriefCarousel } from "@/app/components/DailyBriefCarousel";
 
-export default async function DailyBriefPage() {
+export default async function DailyBriefPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ coverage?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.email) redirect("/");
 
   await runMigrations();
+  const { coverage: initialCoverageId } = await searchParams;
 
   const userId = await getUserIdByEmail(session.user.email);
   if (!userId) redirect("/");
@@ -23,9 +28,10 @@ export default async function DailyBriefPage() {
   // handles that and starts background regeneration when needed.
   const slides = await Promise.all(
     topics.map(async (topic) => {
-      const [entries, cache] = await Promise.all([
+      const [entries, cache, historyCount] = await Promise.all([
         getDailyBriefEntries(topic),
         getDailyBriefCache(topic.key),
+        getHistoryCount(topic.key),
       ]);
       return {
         topicKey:       topic.key,
@@ -45,13 +51,14 @@ export default async function DailyBriefPage() {
         cachedDiff:     cache?.diff_summary  ?? null,
         cachedAt:       cache?.generated_at  ?? null,
         cachedHeadline: cache?.headline      ?? null,
+        historyCount,
       };
     })
   );
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-zinc-950">
-      <DailyBriefCarousel slides={slides} />
+      <DailyBriefCarousel slides={slides} initialTopicKey={initialCoverageId} />
     </main>
   );
 }

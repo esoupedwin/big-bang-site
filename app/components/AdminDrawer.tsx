@@ -99,6 +99,23 @@ export function AdminDrawer({ isOpen, onClose }: Props) {
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-2">
+              Tooltips
+            </p>
+            <button
+              onClick={() => {
+                localStorage.removeItem("te:coachmark_step");
+                window.dispatchEvent(new CustomEvent("te:reset"));
+                onClose();
+                router.push("/daily-brief");
+              }}
+              className="px-3 py-1.5 text-xs font-medium rounded border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Replay Tooltips
+            </button>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-2">
               Onboarding
             </p>
             <button

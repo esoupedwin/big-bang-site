@@ -208,17 +208,23 @@ export function buildAnalyticalTakePrompt(
       }).join("\n\n")
     : "No prior recorded developments.";
 
+  const entryCount = history.length;
+  const entriesNote = entryCount < 5
+    ? `You have ${entryCount} recorded development${entryCount !== 1 ? "s" : ""} available — use all of them. Do not invent or pad entries beyond what is provided.`
+    : `Draw from the recorded developments and current brief — up to 5 entries.`;
+
   return `You are a geopolitical intelligence analyst. Produce a "Developments Over Time" assessment for the coverage below.
 
 Coverage: ${label}
 
-Recorded developments over time (chronological sample):
+Recorded developments over time (${entryCount} available, chronological order):
 ${historyBlock}
 
 Current brief:
 ${content}
 
 Output exactly three sections using the markdown format below. No preamble, no extra commentary.
+${entriesNote}
 
 ---
 
@@ -228,7 +234,7 @@ Output exactly three sections using the markdown format below. No preamble, no e
   [2 sentences: what happened, and why it represents a meaningful shift in the conflict/issue dynamics.]
 - **[Date] — [headline]**
   [2 sentences]
-- (repeat for up to 5 entries, chronological order, draw from the recorded developments and current brief)
+- (repeat for all ${entryCount} available entries, in chronological order)
 
 **Trajectory**
 

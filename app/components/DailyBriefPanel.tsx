@@ -49,6 +49,7 @@ type Props = {
   cachedAt:       string | null;
   articleCount:   number;
   articles:       ArticleRef[];
+  historyCount:   number;
 };
 
 export function DailyBriefPanel({
@@ -60,6 +61,7 @@ export function DailyBriefPanel({
   cachedAt,
   articleCount,
   articles,
+  historyCount,
 }: Props) {
   const [content,      setContent]      = useState(cachedContent);
   const [headline,     setHeadline]     = useState(cachedHeadline);
@@ -390,6 +392,7 @@ export function DailyBriefPanel({
           label={label}
           content={content}
           generatedAt={generatedAt}
+          historyCount={historyCount}
         />
       )}
 

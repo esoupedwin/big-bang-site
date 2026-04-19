@@ -31,20 +31,20 @@ function Visual1() {
 
 function Visual2() {
   const bullets = [
-    { headline: "US expands naval presence in Hormuz",  dim: false },
-    { headline: "Iran signals nuclear concession",       dim: false },
-    { headline: "Israel targets proxy infrastructure",   dim: true  },
+    { headline: "US expands naval presence in Hormuz", detail: "Additional carrier group deployed amid blockade enforcement.", dim: false },
+    { headline: "Iran signals nuclear concession",      detail: "Indirect talks resume; enrichment freeze offered conditionally.", dim: false },
+    { headline: "Israel targets proxy sites in Syria",  detail: "Third airstrike this week on Iranian-linked positions.",          dim: true  },
   ];
   return (
-    <div className="w-full max-w-xs rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-3">
+    <div className="w-full max-w-xs rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-3.5">
       {bullets.map((b, i) => (
-        <div key={i} className={`flex items-start gap-3 ${b.dim ? "opacity-40" : ""}`}>
-          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-400 shrink-0" />
-          <div className="space-y-1 flex-1">
-            <div className={`h-2.5 rounded-full bg-zinc-300 ${b.dim ? "w-3/4" : "w-full"}`} />
-            <div className={`h-2 rounded-full bg-zinc-700 ${b.dim ? "w-1/2" : "w-5/6"}`} />
+        <div key={i} className={`flex items-start gap-3 ${b.dim ? "opacity-35" : ""}`}>
+          <span className="mt-1 w-1.5 h-1.5 rounded-full bg-zinc-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-zinc-200 leading-snug">{b.headline}</p>
+            <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">{b.detail}</p>
           </div>
-          <span className="text-[10px] font-mono text-zinc-600 shrink-0">#{i + 1}</span>
+          <span className="text-[10px] font-mono text-zinc-600 shrink-0 mt-0.5">#{i + 1}</span>
         </div>
       ))}
     </div>
@@ -70,7 +70,7 @@ function Visual3() {
           <div className="h-2 rounded-full bg-amber-700/50 w-4/5" />
         </div>
         <span className="text-[9px] font-semibold tracking-wide text-amber-400 bg-amber-950 border border-amber-700/60 px-1.5 py-0.5 rounded shrink-0">
-          NEW
+          CHANGES
         </span>
       </div>
       {/* Another old item */}
