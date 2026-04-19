@@ -383,13 +383,14 @@ export function DailyBriefPanel({
         </div>
       )}
 
-      {/* Analytical Take — auto-loads once animation is done */}
+      {/* Developments Over Time — auto-loads once animation is done */}
       {!isAnimating && content && (
         <AnalyticalTakeSection
           topicKey={topicKey}
           label={label}
           content={content}
           diff={diff}
+          generatedAt={generatedAt}
         />
       )}
 
