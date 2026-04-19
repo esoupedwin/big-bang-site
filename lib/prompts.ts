@@ -1,8 +1,9 @@
-export const SYNTHESIS_MODEL     = "gpt-5.4";
-export const HEADLINE_MODEL      = "gpt-5.4-mini";
-export const PERSONALITIES_MODEL = "gpt-5.4-nano";
-export const CONCEPTS_MODEL      = "gpt-5.4-nano";
-export const PRIORITIES_MODEL    = "gpt-5.4-nano";
+export const SYNTHESIS_MODEL        = "gpt-5.4";
+export const HEADLINE_MODEL         = "gpt-5.4-mini";
+export const PERSONALITIES_MODEL    = "gpt-5.4-nano";
+export const CONCEPTS_MODEL         = "gpt-5.4-nano";
+export const PRIORITIES_MODEL       = "gpt-5.4-nano";
+export const ANALYTICAL_TAKE_MODEL  = "gpt-5.4-mini";
 
 export const HEADLINE_MARKER = "<!--BB_HEADLINE-->";
 export const DIFF_MARKER     = "<!--BB_DIFF-->";
@@ -191,3 +192,15 @@ Output Structure:
 6. Bottom Line
    - Concise analytical takeaway (no over-speculation)
 `;
+
+export function buildAnalyticalTakePrompt(label: string, content: string, diff: string | null): string {
+  return `You are a geopolitical intelligence analyst. Based on the intelligence brief below, produce a concise analytical take.
+
+Coverage focus: "${label}"
+
+Current brief:
+${content}
+${diff ? `\nRecent changes:\n${diff}` : ""}
+
+Write exactly 3–4 sentences of analytical commentary. Focus on trajectory, underlying dynamics, and what the developments signal — not just what happened. Be direct and insight-driven. No headers, no bullet points, no preamble.`;
+}

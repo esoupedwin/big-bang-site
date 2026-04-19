@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { CollapsibleBullet } from "./CollapsibleBullet";
 import { ArticlesDrawer, ArticleRef } from "./ArticlesDrawer";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
+import { AnalyticalTakeSection } from "./AnalyticalTakeSection";
 
 const UPDATING_TEXT = "Generating latest development...";
 // Each cycle: 35 chars × 50 ms = 1 750 ms typing + 250 ms pause = 2 000 ms total
@@ -380,6 +381,16 @@ export function DailyBriefPanel({
             {diff}
           </ReactMarkdown>
         </div>
+      )}
+
+      {/* Analytical Take — auto-loads once animation is done */}
+      {!isAnimating && content && (
+        <AnalyticalTakeSection
+          topicKey={topicKey}
+          label={label}
+          content={content}
+          diff={diff}
+        />
       )}
 
       {/* Additional Info — loads on explicit scroll, one-shot per slide */}
