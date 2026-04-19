@@ -60,7 +60,7 @@ export async function getUserAchievements(
   userId: string
 ): Promise<{ key: string; earned_at: string }[]> {
   const rows = await sql`
-    SELECT achievement_key, earned_at
+    SELECT achievement_key AS key, earned_at
     FROM user_achievements
     WHERE user_id = ${userId}
     ORDER BY earned_at ASC
