@@ -1,6 +1,6 @@
 export const SYNTHESIS_MODEL     = "gpt-5.4";
 export const HEADLINE_MODEL      = "gpt-5.4-mini";
-export const PERSONALITIES_MODEL = "gpt-5.4-mini";
+export const PERSONALITIES_MODEL = "gpt-5.4-nano";
 export const CONCEPTS_MODEL      = "gpt-5.4-nano";
 export const PRIORITIES_MODEL    = "gpt-5.4-nano";
 

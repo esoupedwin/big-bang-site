@@ -300,7 +300,7 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
 
         {/* ── Personalities segment ──────────────────────────────────────── */}
         {triggered && (
-          <div>
+          <div className="mb-30">
             <p className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-3">
               Personalities mentioned:
             </p>
@@ -376,7 +376,10 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
         {triggered && !personLoading && personText && (
           <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
             <p className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-3">
-              Concepts explained:
+              Concepts mentioned:
+            </p>
+            <p className="text-xs text-zinc-300 dark:text-zinc-600 mt-3 mb-6">
+              Concepts that may require additional context or explanation are listed here.
             </p>
 
             {/* Sentinel: concepts fetch only fires when this scrolls into view */}
