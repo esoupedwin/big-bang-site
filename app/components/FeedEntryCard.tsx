@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { FeedEntry } from "@/lib/feed";
 import { CollapsibleText } from "./CollapsibleText";
 import { FetchedAtPopover } from "./FetchedAtPopover";
 import { trackArticleClickAction } from "@/app/actions/achievements";
-import type { Achievement } from "@/lib/achievements";
 import { AchievementToast } from "./AchievementToast";
+import { useTabFocusAchievement } from "@/app/hooks/useTabFocusAchievement";
 
 export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
-  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
+  const { newAchievement, setNewAchievement, onEarned } = useTabFocusAchievement();
 
   return (
     <li className="border-b border-zinc-200 dark:border-zinc-800 pb-6">
@@ -44,7 +43,7 @@ export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
         className="text-lg font-semibold text-zinc-900 dark:text-white hover:underline"
         onClick={() => {
           trackArticleClickAction().then((earned) => {
-            if (earned) setNewAchievement(earned);
+            if (earned) onEarned(earned);
           }).catch(() => {});
         }}
       >

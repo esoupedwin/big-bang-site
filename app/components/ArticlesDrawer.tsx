@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { trackArticleClickAction } from "@/app/actions/achievements";
-import type { Achievement } from "@/lib/achievements";
 import { AchievementToast } from "./AchievementToast";
+import { useTabFocusAchievement } from "@/app/hooks/useTabFocusAchievement";
 
 export type ArticleRef = {
   title:       string | null;
@@ -21,7 +20,7 @@ type Props = {
 };
 
 export function ArticlesDrawer({ isOpen, onClose, articles }: Props) {
-  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
+  const { newAchievement, setNewAchievement, onEarned } = useTabFocusAchievement();
 
   return (
     <>
@@ -92,7 +91,7 @@ export function ArticlesDrawer({ isOpen, onClose, articles }: Props) {
                   className="text-sm text-zinc-800 dark:text-zinc-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors leading-snug"
                   onClick={() => {
                     trackArticleClickAction().then((earned) => {
-                      if (earned) setNewAchievement(earned);
+                      if (earned) onEarned(earned);
                     }).catch(() => {});
                   }}
                 >
