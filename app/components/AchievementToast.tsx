@@ -9,7 +9,7 @@ type Props = {
   onDismiss:   () => void;
 };
 
-const AUTO_DISMISS_MS = 5000;
+const AUTO_DISMISS_MS = 10000;
 
 export function AchievementToast({ achievement, onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
