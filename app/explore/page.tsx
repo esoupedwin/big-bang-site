@@ -8,24 +8,26 @@ import { MiscToggle } from "../components/MiscToggle";
 import { PageNav } from "../components/PageNav";
 import { SynthesisPanel } from "../components/SynthesisPanel";
 import { TagFilterAsync, TagFilterSkeleton } from "../components/TagFilterAsync";
+import { SearchBar } from "../components/SearchBar";
 
 export default async function ExplorePage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; geo?: string | string[]; topic?: string | string[]; show_misc?: string }>;
+  searchParams: Promise<{ page?: string; geo?: string | string[]; topic?: string | string[]; show_misc?: string; q?: string }>;
 }) {
   const session = await auth();
   if (!session) redirect("/");
 
   await runMigrations();
 
-  const { page: pageParam, geo, topic, show_misc } = await searchParams;
+  const { page: pageParam, geo, topic, show_misc, q } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const selectedGeoTags: string[] = geo ? (Array.isArray(geo) ? geo : [geo]) : [];
   const selectedTopicTags: string[] = topic ? (Array.isArray(topic) ? topic : [topic]) : [];
   const showMisc = show_misc === "1";
 
-  const { entries, total } = await getFeedEntries(page, selectedGeoTags, selectedTopicTags, showMisc);
+  const search = q ?? "";
+  const { entries, total } = await getFeedEntries(page, selectedGeoTags, selectedTopicTags, showMisc, search);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const currentPage = Math.min(page, totalPages || 1);
@@ -36,6 +38,10 @@ export default async function ExplorePage({
     <main className="min-h-screen bg-white dark:bg-zinc-950 px-4 py-10">
       <div className="max-w-2xl mx-auto">
         <h1 data-te-id="explore-heading" className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">Explore</h1>
+
+        <Suspense>
+          <SearchBar />
+        </Suspense>
 
         <Suspense fallback={<TagFilterSkeleton />}>
           <TagFilterAsync />
@@ -51,7 +57,10 @@ export default async function ExplorePage({
           entries={entries.map(({ title, summary, gist }) => ({ title, summary, gist }))}
           selectedGeoTags={selectedGeoTags}
           selectedTopicTags={selectedTopicTags}
+          search={search || undefined}
         />
+
+        <hr className="border-zinc-200 dark:border-zinc-800 mt-6" />
 
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-4 mb-6">
           {total > 0 ? `${start}–${end} of ${total} articles` : "No articles found."}
@@ -69,7 +78,7 @@ export default async function ExplorePage({
 
             <ol className="space-y-6 mt-8">
               {entries.map((entry) => (
-                <FeedEntryCard key={entry.id} entry={entry} />
+                <FeedEntryCard key={entry.id} entry={entry} highlight={search || undefined} />
               ))}
             </ol>
 

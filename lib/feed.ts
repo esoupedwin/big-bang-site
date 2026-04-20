@@ -30,48 +30,76 @@ export async function getAllTags(): Promise<{ geoTags: string[]; topicTags: stri
   };
 }
 
+// Parse search query into OR groups of AND terms.
+// " OR " (caps, space-padded) is the OR operator; spaces within a group are AND.
+// e.g. "Iran Conflict OR Trump" → [["Iran","Conflict"], ["Trump"]]
+export function parseSearch(query: string): string[][] {
+  return query
+    .split(" OR ")
+    .map((g) => g.trim().split(/\s+/).filter(Boolean))
+    .filter((g) => g.length > 0);
+}
+
 export async function getFeedEntries(
   page: number,
   selectedGeoTags: string[],
   selectedTopicTags: string[],
-  showMisc: boolean
+  showMisc: boolean,
+  search: string = ""
 ): Promise<{ entries: FeedEntry[]; total: number }> {
   const offset = (page - 1) * PAGE_SIZE;
+  const searchGroups = search.trim() === "" ? [] : parseSearch(search);
 
-  // Boolean flags short-circuit the array conditions when no filter is active.
-  // Placeholder arrays are never matched against because the flag is true.
-  const skipGeo = selectedGeoTags.length === 0;
-  const skipTopic = selectedTopicTags.length === 0;
-  const geoParam = skipGeo ? [""] : selectedGeoTags;
-  const topicParam = skipTopic ? [""] : selectedTopicTags;
+  // Build a dynamic parameterised query so that the search clause can express
+  // arbitrary AND/OR term combinations without SQL injection risk.
+  const params: unknown[] = [];
+  const p = (val: unknown) => { params.push(val); return `$${params.length}`; };
 
-  const [entries, countResult] = await Promise.all([
-    sql`
-      SELECT id, feed_name, title, link, summary, gist, author, published_at, fetched_at, geo_tags, topic_tags
-      FROM feed_entries
-      WHERE (${skipGeo} OR geo_tags && ${geoParam})
-        AND (${skipTopic} OR topic_tags && ${topicParam})
-        AND (${showMisc} OR topic_tags IS NULL OR topic_tags <> ARRAY[${MISC_TAG}]::text[])
-      ORDER BY published_at DESC NULLS LAST
-      LIMIT ${PAGE_SIZE} OFFSET ${offset}
-    `,
-    sql`
-      SELECT COUNT(*)
-      FROM feed_entries
-      WHERE (${skipGeo} OR geo_tags && ${geoParam})
-        AND (${skipTopic} OR topic_tags && ${topicParam})
-        AND (${showMisc} OR topic_tags IS NULL OR topic_tags <> ARRAY[${MISC_TAG}]::text[])
-    `,
-  ]);
+  const conditions: string[] = [];
 
-  const deduped = (entries as FeedEntry[]).map((e) => ({
+  if (selectedGeoTags.length > 0) {
+    conditions.push(`geo_tags && ${p(selectedGeoTags)}::text[]`);
+  }
+  if (selectedTopicTags.length > 0) {
+    conditions.push(`topic_tags && ${p(selectedTopicTags)}::text[]`);
+  }
+  if (!showMisc) {
+    conditions.push(`(topic_tags IS NULL OR topic_tags <> ARRAY[${p(MISC_TAG)}]::text[])`);
+  }
+  if (searchGroups.length > 0) {
+    const orClauses = searchGroups.map((terms) => {
+      const andClauses = terms.map((term) => {
+        const pat = p(`%${term}%`);
+        return `(title ILIKE ${pat} OR summary ILIKE ${pat} OR gist ILIKE ${pat})`;
+      });
+      return `(${andClauses.join(" AND ")})`;
+    });
+    conditions.push(`(${orClauses.join(" OR ")})`);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  // Use COUNT(*) OVER() to get the total in a single round-trip.
+  const limitP = p(PAGE_SIZE);
+  const offsetP = p(offset);
+
+  const rows = await sql.query(
+    `SELECT id, feed_name, title, link, summary, gist, author, published_at, fetched_at,
+            geo_tags, topic_tags, COUNT(*) OVER() AS total_count
+     FROM feed_entries
+     ${where}
+     ORDER BY published_at DESC NULLS LAST
+     LIMIT ${limitP} OFFSET ${offsetP}`,
+    params
+  ) as (FeedEntry & { total_count: string })[];
+
+  const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+
+  const deduped = rows.map((e) => ({
     ...e,
     geo_tags: e.geo_tags ? [...new Set(e.geo_tags)] : e.geo_tags,
     topic_tags: e.topic_tags ? [...new Set(e.topic_tags)] : e.topic_tags,
   }));
 
-  return {
-    entries: deduped,
-    total: Number((countResult[0] as { count: string }).count),
-  };
+  return { entries: deduped, total };
 }

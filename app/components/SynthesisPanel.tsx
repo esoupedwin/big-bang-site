@@ -12,9 +12,10 @@ type Props = {
   entries: EntryInput[];
   selectedGeoTags: string[];
   selectedTopicTags: string[];
+  search?: string;
 };
 
-export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: Props) {
+export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags, search }: Props) {
   const [synthesis,      setSynthesis]      = useState("");
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState("");
@@ -74,7 +75,7 @@ export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: 
         disabled={loading || entries.length === 0}
         className="px-4 py-2 text-sm font-medium text-white bg-zinc-800 dark:bg-white dark:text-zinc-900 rounded hover:bg-zinc-700 dark:hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? "Synthesizing…" : "Synthesize"}
+        {loading ? "Synthesizing…" : "Synthesize Top 50 Results"}
       </button>
 
       {error && (
@@ -83,11 +84,26 @@ export function SynthesisPanel({ entries, selectedGeoTags, selectedTopicTags }: 
 
       {synthesis && (
         <div className="mt-3 p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-1">
-            Geopolitical Synthesis · {entries.length} articles
-          </p>
-          {focusLabel && (
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">{focusLabel}</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
+              Synthesis · {entries.length} articles
+            </p>
+            <button
+              onClick={() => setSynthesis("")}
+              className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+              aria-label="Close synthesis"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {(focusLabel || search) && (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">
+              {focusLabel}
+              {focusLabel && search ? " · " : ""}
+              {search && <span>Keywords: <span className="text-zinc-300 dark:text-zinc-400">{search}</span></span>}
+            </p>
           )}
           <div className="synthesis-prose prose prose-zinc dark:prose-invert max-w-none">
             <ReactMarkdown>{synthesis}</ReactMarkdown>

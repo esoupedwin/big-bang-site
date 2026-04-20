@@ -7,7 +7,24 @@ import { trackArticleClickAction } from "@/app/actions/achievements";
 import { AchievementToast } from "./AchievementToast";
 import { useTabFocusAchievement } from "@/app/hooks/useTabFocusAchievement";
 
-export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
+function highlightTitle(text: string, query: string) {
+  // Flatten all AND/OR groups into unique terms; skip the literal "OR" operator.
+  const terms = [...new Set(
+    query.split(" OR ").flatMap((g) => g.trim().split(/\s+/)).filter(Boolean)
+  )];
+  if (terms.length === 0) return text;
+  const pattern = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+  const parts = text.split(pattern);
+  return parts.map((part, i) =>
+    pattern.test(part) ? (
+      <mark key={i} className="bg-yellow-200 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">
+        {part}
+      </mark>
+    ) : part
+  );
+}
+
+export function FeedEntryCard({ entry, highlight }: { entry: FeedEntry; highlight?: string }) {
   const { newAchievement, setNewAchievement, onEarned } = useTabFocusAchievement();
 
   return (
@@ -47,7 +64,7 @@ export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
           }).catch(() => {});
         }}
       >
-        {entry.title}
+        {highlight ? highlightTitle(entry.title ?? "", highlight) : entry.title}
       </a>
 
       {entry.author && (
@@ -60,12 +77,14 @@ export function FeedEntryCard({ entry }: { entry: FeedEntry }) {
             <CollapsibleText
               text={entry.summary}
               className="text-sm text-zinc-600 dark:text-zinc-400"
+              highlight={highlight}
             />
           )}
           {entry.gist && (
             <CollapsibleText
               text={entry.gist}
               className="text-sm text-zinc-500 dark:text-zinc-500"
+              highlight={highlight}
             />
           )}
         </div>
