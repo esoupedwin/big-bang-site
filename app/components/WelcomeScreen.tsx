@@ -35,7 +35,7 @@ export function WelcomeScreen() {
         Welcome back.
       </p>
       <p className="text-zinc-500 text-sm font-sans mb-12">
-        Preparing your intelligence brief…
+        Preparing your brief…
       </p>
 
       <div className="flex items-center gap-1.5">
