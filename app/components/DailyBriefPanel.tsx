@@ -281,11 +281,7 @@ export function DailyBriefPanel({
     <div className="mt-2 space-y-6">
       {/* Metadata row */}
       <div className="flex flex-col gap-1 text-xs text-zinc-400 dark:text-zinc-500">
-        {isRefreshing ? (
-          <UpdatingIndicator />
-        ) : formattedAt ? (
-          <span className="text-zinc-300 dark:text-zinc-600">Generated on {formattedAt}</span>
-        ) : null}
+        <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Current Developments</p>
         <div className="flex items-center gap-2">
           <span>
             Based on{" "}
@@ -307,6 +303,11 @@ export function DailyBriefPanel({
             </button>
           )}
         </div>
+        {isRefreshing ? (
+          <UpdatingIndicator />
+        ) : formattedAt ? (
+          <span className="text-zinc-300 dark:text-zinc-600">Generated on {formattedAt}</span>
+        ) : null}
       </div>
 
       {/* Witty headline — streams first, then bullets begin */}

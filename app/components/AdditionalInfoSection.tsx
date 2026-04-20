@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 
@@ -106,6 +106,21 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
 
   // ── Lightbox ───────────────────────────────────────────────────────────────
   const [lightboxImg, setLightboxImg] = useState<{ url: string; name: string } | null>(null);
+
+  // ── Auto-trigger concepts when in view ─────────────────────────────────────
+  const conceptsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (conceptTriggered || !triggered) return;
+    const el = conceptsRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setConceptTriggered(true); },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [triggered, conceptTriggered]);
 
   useEffect(() => {
     if (!lightboxImg) return;
@@ -241,11 +256,11 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
       <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            <h3 className="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
               Additional Info
             </h3>
             <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-              Learn more about the coverage. Learn about key personalities and concepts referenced in this coverage.
+              Context that matters: who’s involved and what it means.
             </p>
           </div>
           {!triggered && (
@@ -341,17 +356,12 @@ export function AdditionalInfoSection({ topicKey, label, content }: Props) {
         )}
 
         {/* ── Concepts ───────────────────────────────────────────────────── */}
-        {triggered && !personLoading && personText && (
-          <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
+        {triggered && (
+          <div ref={conceptsRef} className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 Concepts mentioned
               </p>
-              {!conceptTriggered && (
-                <button onClick={() => setConceptTriggered(true)} className={btnClass}>
-                  Load
-                </button>
-              )}
             </div>
 
             {!conceptTriggered && (

@@ -80,7 +80,7 @@ export function AnalyticalTakeSection({ topicKey, label, content, generatedAt, h
   if (remaining > 0) {
     return (
       <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mb-1">
+        <p className="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1">
           Developments Over Time
         </p>
         <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2">
@@ -106,7 +106,7 @@ export function AnalyticalTakeSection({ topicKey, label, content, generatedAt, h
     />
     <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        <p className="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
           Developments Over Time
         </p>
         {!text && !loading && !error ? (
@@ -141,7 +141,7 @@ export function AnalyticalTakeSection({ topicKey, label, content, generatedAt, h
           <ReactMarkdown
             components={{
               h2: ({ children }) => (
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mt-4 mb-2 first:mt-0">
+                <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mt-4 mb-2 first:mt-0">
                   {children}
                 </h2>
               ),
