@@ -35,12 +35,12 @@ export function FeedEntryCard({ entry, highlight }: { entry: FeedEntry; highligh
           onDismiss={() => setNewAchievement(null)}
         />
       )}
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex flex-wrap items-center gap-2 mb-1">
         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
           {entry.feed_name}
         </span>
         {entry.published_at && (
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">
+          <span className="inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500 w-full sm:w-auto">
             <span className="text-zinc-300 dark:text-zinc-600">Published </span>
             {new Date(entry.published_at).toLocaleString("en-GB", {
               day: "2-digit", month: "short", year: "numeric",
@@ -48,9 +48,9 @@ export function FeedEntryCard({ entry, highlight }: { entry: FeedEntry; highligh
               timeZone: "Asia/Singapore",
               timeZoneName: "short",
             })}
+            {entry.fetched_at && <FetchedAtPopover fetchedAt={entry.fetched_at} />}
           </span>
         )}
-        {entry.fetched_at && <FetchedAtPopover fetchedAt={entry.fetched_at} />}
       </div>
 
       <a
