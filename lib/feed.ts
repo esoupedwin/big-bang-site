@@ -30,13 +30,26 @@ export async function getAllTags(): Promise<{ geoTags: string[]; topicTags: stri
   };
 }
 
+const SEARCH_MAX_LEN   = 200; // chars — reject anything longer
+const SEARCH_MAX_GROUPS = 5;  // max OR groups
+const SEARCH_MAX_TERMS  = 8;  // max AND terms per group
+
+// Escape PostgreSQL LIKE/ILIKE special characters so user input is always
+// treated as a literal substring, never as a pattern wildcard.
+function escapeLike(term: string): string {
+  return term.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
 // Parse search query into OR groups of AND terms.
 // " OR " (caps, space-padded) is the OR operator; spaces within a group are AND.
 // e.g. "Iran Conflict OR Trump" → [["Iran","Conflict"], ["Trump"]]
 export function parseSearch(query: string): string[][] {
   return query
+    .trim()
+    .slice(0, SEARCH_MAX_LEN)
     .split(" OR ")
-    .map((g) => g.trim().split(/\s+/).filter(Boolean))
+    .slice(0, SEARCH_MAX_GROUPS)
+    .map((g) => g.trim().split(/\s+/).filter(Boolean).slice(0, SEARCH_MAX_TERMS))
     .filter((g) => g.length > 0);
 }
 
@@ -69,8 +82,8 @@ export async function getFeedEntries(
   if (searchGroups.length > 0) {
     const orClauses = searchGroups.map((terms) => {
       const andClauses = terms.map((term) => {
-        const pat = p(`%${term}%`);
-        return `(title ILIKE ${pat} OR summary ILIKE ${pat} OR gist ILIKE ${pat})`;
+        const pat = p(`%${escapeLike(term)}%`);
+        return `(title ILIKE ${pat} ESCAPE '\\' OR summary ILIKE ${pat} ESCAPE '\\' OR gist ILIKE ${pat} ESCAPE '\\')`;
       });
       return `(${andClauses.join(" AND ")})`;
     });

@@ -26,7 +26,7 @@ export default async function ExplorePage({
   const selectedTopicTags: string[] = topic ? (Array.isArray(topic) ? topic : [topic]) : [];
   const showMisc = show_misc === "1";
 
-  const search = q ?? "";
+  const search = (q ?? "").slice(0, 200);
   const { entries, total } = await getFeedEntries(page, selectedGeoTags, selectedTopicTags, showMisc, search);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
