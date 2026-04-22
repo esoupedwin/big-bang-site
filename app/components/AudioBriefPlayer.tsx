@@ -78,8 +78,35 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
     setProgress(0);
   }
 
+  function attachHandlers(audio: HTMLAudioElement) {
+    audio.ontimeupdate = () => {
+      if (audio.duration) setProgress(audio.currentTime / audio.duration);
+    };
+    audio.onended = () => {
+      audioRef.current = null;
+      setProgress(0);
+      setState("idle");
+    };
+    audio.onerror = () => {
+      cleanup();
+      setError("Playback error.");
+      setState("idle");
+    };
+  }
+
   async function handlePlay() {
     setError("");
+
+    // Replay from cached blob — no re-fetch needed
+    if (urlRef.current) {
+      const audio = new Audio(urlRef.current);
+      audioRef.current = audio;
+      attachHandlers(audio);
+      audio.play().catch(() => { setError("Playback error."); setState("idle"); });
+      setState("playing");
+      return;
+    }
+
     setStepLabel(STEP_LABELS[0]);
     setState("loading");
 
@@ -127,18 +154,7 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       audio.src = url;
       audio.load();
 
-      audio.ontimeupdate = () => {
-        if (audio.duration) setProgress(audio.currentTime / audio.duration);
-      };
-      audio.onended = () => {
-        cleanup();
-        setState("idle");
-      };
-      audio.onerror = () => {
-        cleanup();
-        setError("Playback error.");
-        setState("idle");
-      };
+      attachHandlers(audio);
 
       await audio.play();
       setState("playing");
