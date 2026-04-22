@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { awardAchievementAction } from "@/app/actions/achievements";
+import type { Achievement } from "@/lib/achievements";
+import { AchievementToast } from "./AchievementToast";
 
 type PlayerState = "idle" | "loading" | "playing" | "paused";
 
@@ -52,12 +55,13 @@ function StopIcon() {
 }
 
 export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
-  const [state,      setState]      = useState<PlayerState>("idle");
-  const [stepLabel,  setStepLabel]  = useState(STEP_LABELS[0]);
-  const [progress,   setProgress]   = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration,    setDuration]    = useState(0);
-  const [error,      setError]      = useState("");
+  const [state,          setState]          = useState<PlayerState>("idle");
+  const [stepLabel,      setStepLabel]      = useState(STEP_LABELS[0]);
+  const [progress,       setProgress]       = useState(0);
+  const [currentTime,    setCurrentTime]    = useState(0);
+  const [duration,       setDuration]       = useState(0);
+  const [error,          setError]          = useState("");
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef   = useRef<string | null>(null);
@@ -101,6 +105,9 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       setProgress(0);
       setCurrentTime(0);
       setState("idle");
+      awardAchievementAction("disc_jockey").then((earned) => {
+        if (earned) setNewAchievement(earned);
+      });
     };
     audio.onerror = () => {
       cleanup();
@@ -197,6 +204,12 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
+      {newAchievement && (
+        <AchievementToast
+          achievement={newAchievement}
+          onDismiss={() => setNewAchievement(null)}
+        />
+      )}
       <div className="flex items-center gap-3">
         {/* Play / loading button */}
         {state === "idle" && (
