@@ -27,7 +27,7 @@ const EDGE_RESISTANCE = 0.15;
 // Snap transition — mimics iOS spring
 const SNAP_TRANSITION = "transform 380ms cubic-bezier(0.25, 0.46, 0.45, 0.94)";
 
-export function DailyBriefCarousel({ slides, initialTopicKey }: { slides: TopicSlide[]; initialTopicKey?: string }) {
+export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voiceTone }: { slides: TopicSlide[]; initialTopicKey?: string; voiceGender: string; voiceTone: string }) {
   const router = useRouter();
 
   const initialIndex = initialTopicKey
@@ -260,6 +260,8 @@ export function DailyBriefCarousel({ slides, initialTopicKey }: { slides: TopicS
                   articleCount={articleCount}
                   articles={articles}
                   historyCount={historyCount}
+                  voiceGender={voiceGender}
+                  voiceTone={voiceTone}
                 />
               )}
 

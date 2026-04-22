@@ -13,10 +13,12 @@ const STEP_LABELS = [
 ];
 
 type Props = {
-  label:    string;
-  headline: string | null;
-  content:  string;
-  diff:     string | null;
+  label:        string;
+  headline:     string | null;
+  content:      string;
+  diff:         string | null;
+  voiceGender:  string;
+  voiceTone:    string;
 };
 
 function HeadphonesIcon() {
@@ -54,7 +56,7 @@ function StopIcon() {
   );
 }
 
-export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
+export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, voiceTone }: Props) {
   const [state,          setState]          = useState<PlayerState>("idle");
   const [stepLabel,      setStepLabel]      = useState(STEP_LABELS[0]);
   const [progress,       setProgress]       = useState(0);
@@ -150,6 +152,7 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
           headline: headline ?? "",
           content,
           diff: diff ?? "",
+          tone: voiceTone,
         }),
       });
 
@@ -161,7 +164,7 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       const ttsRes = await fetch("/api/audio-brief/tts", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ script }),
+        body:    JSON.stringify({ script, gender: voiceGender }),
       });
 
       if (!ttsRes.ok) throw new Error("Failed to generate audio.");

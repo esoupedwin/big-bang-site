@@ -51,6 +51,8 @@ type Props = {
   articleCount:   number;
   articles:       ArticleRef[];
   historyCount:   number;
+  voiceGender:    string;
+  voiceTone:      string;
 };
 
 export function DailyBriefPanel({
@@ -63,6 +65,8 @@ export function DailyBriefPanel({
   articleCount,
   articles,
   historyCount,
+  voiceGender,
+  voiceTone,
 }: Props) {
   const [content,      setContent]      = useState(cachedContent);
   const [headline,     setHeadline]     = useState(cachedHeadline);
@@ -287,6 +291,8 @@ export function DailyBriefPanel({
           headline={headline}
           content={content}
           diff={diff}
+          voiceGender={voiceGender}
+          voiceTone={voiceTone}
         />
       )}
 
