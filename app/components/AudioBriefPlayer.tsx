@@ -83,6 +83,14 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
     setStepLabel(STEP_LABELS[0]);
     setState("loading");
 
+    // Unlock audio synchronously within the user gesture — mobile browsers
+    // (iOS Safari, Android Chrome) block play() called after any async gap.
+    const audio = new Audio();
+    audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+    audio.volume = 0;
+    audio.play().catch(() => {});
+    audioRef.current = audio;
+
     try {
       // Step 1: generate spoken script
       const scriptRes = await fetch("/api/audio-brief/script", {
@@ -113,8 +121,11 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       const url  = URL.createObjectURL(blob);
       urlRef.current = url;
 
-      const audio = new Audio(url);
-      audioRef.current = audio;
+      // Reuse the already-unlocked element with the real audio source
+      audio.pause();
+      audio.volume = 1;
+      audio.src = url;
+      audio.load();
 
       audio.ontimeupdate = () => {
         if (audio.duration) setProgress(audio.currentTime / audio.duration);
