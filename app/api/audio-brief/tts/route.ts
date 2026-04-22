@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { openai } from "@/lib/openai";
 import { AUDIO_BRIEF_TTS_MODEL, AUDIO_BRIEF_TTS_VOICE } from "@/lib/prompts";
 
+export const maxDuration = 60;
+
 const SCRIPT_MAX_CHARS = 4096;
 
 export async function POST(req: NextRequest) {
