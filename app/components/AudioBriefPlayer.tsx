@@ -55,6 +55,8 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
   const [state,      setState]      = useState<PlayerState>("idle");
   const [stepLabel,  setStepLabel]  = useState(STEP_LABELS[0]);
   const [progress,   setProgress]   = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration,    setDuration]    = useState(0);
   const [error,      setError]      = useState("");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -68,6 +70,12 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
     };
   }, []);
 
+  function formatTime(s: number) {
+    const m = Math.floor(s / 60);
+    const ss = Math.floor(s % 60);
+    return `${m}:${ss.toString().padStart(2, "0")}`;
+  }
+
   function cleanup() {
     audioRef.current?.pause();
     audioRef.current = null;
@@ -76,15 +84,22 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       urlRef.current = null;
     }
     setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
   }
 
   function attachHandlers(audio: HTMLAudioElement) {
+    audio.onloadedmetadata = () => setDuration(audio.duration);
     audio.ontimeupdate = () => {
-      if (audio.duration) setProgress(audio.currentTime / audio.duration);
+      if (audio.duration) {
+        setProgress(audio.currentTime / audio.duration);
+        setCurrentTime(audio.currentTime);
+      }
     };
     audio.onended = () => {
       audioRef.current = null;
       setProgress(0);
+      setCurrentTime(0);
       setState("idle");
     };
     audio.onerror = () => {
@@ -228,6 +243,11 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
                 style={{ width: `${Math.round(progress * 100)}%` }}
               />
             </div>
+
+            {/* Playback time */}
+            <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500 shrink-0">
+              {formatTime(currentTime)}{duration > 0 ? ` / ${formatTime(duration)}` : ""}
+            </span>
           </>
         )}
       </div>
