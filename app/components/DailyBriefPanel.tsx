@@ -6,6 +6,7 @@ import { CollapsibleBullet } from "./CollapsibleBullet";
 import { ArticlesDrawer, ArticleRef } from "./ArticlesDrawer";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { AnalyticalTakeSection } from "./AnalyticalTakeSection";
+import { AudioBriefPlayer } from "./AudioBriefPlayer";
 
 const UPDATING_TEXT = "Generating latest development...";
 // Each cycle: 35 chars × 50 ms = 1 750 ms typing + 250 ms pause = 2 000 ms total
@@ -279,6 +280,16 @@ export function DailyBriefPanel({
       articles={articles}
     />
     <div className="mt-2 space-y-6">
+      {/* Audio Brief — shown as soon as content is available */}
+      {!isAnimating && content && (
+        <AudioBriefPlayer
+          label={label}
+          headline={headline}
+          content={content}
+          diff={diff}
+        />
+      )}
+
       {/* Metadata row */}
       <div className="flex flex-col gap-1 text-xs text-zinc-400 dark:text-zinc-500">
         <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Current Developments</p>
