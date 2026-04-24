@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { getDailyBriefEntries, getDailyBriefCache, getHistoryCount } from "@/lib/brief";
 import { getUserIdByEmail, getUserCoverages, initializeUserCoverages, userCoverageToBriefTopic } from "@/lib/coverages";
 import { runMigrations } from "@/lib/migrate";
+import { getUserPreferences } from "@/lib/preferences";
 import { DailyBriefCarousel } from "@/app/components/DailyBriefCarousel";
 
 export default async function DailyBriefPage({
@@ -20,8 +21,11 @@ export default async function DailyBriefPage({
   if (!userId) redirect("/");
 
   await initializeUserCoverages(userId);
-  const coverages = await getUserCoverages(userId);
-  const topics    = coverages.map(userCoverageToBriefTopic);
+  const [coverages, prefs] = await Promise.all([
+    getUserCoverages(userId),
+    getUserPreferences(session.user.email!),
+  ]);
+  const topics = coverages.map(userCoverageToBriefTopic);
 
   // Fetch entries (for article count) + cache (for stale content) in parallel.
   // Cache validity is intentionally NOT checked here — the trigger endpoint
@@ -58,7 +62,12 @@ export default async function DailyBriefPage({
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-zinc-950">
-      <DailyBriefCarousel slides={slides} initialTopicKey={initialCoverageId} />
+      <DailyBriefCarousel
+        slides={slides}
+        initialTopicKey={initialCoverageId}
+        voiceGender={prefs.audio_brief_voice_gender}
+        voiceTone={prefs.audio_brief_voice_tone}
+      />
     </main>
   );
 }

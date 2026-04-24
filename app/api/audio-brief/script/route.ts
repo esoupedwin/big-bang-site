@@ -3,10 +3,12 @@ import { auth } from "@/lib/auth";
 import { openai } from "@/lib/openai";
 import {
   AUDIO_BRIEF_MODEL,
-  AUDIO_BRIEF_SYSTEM_PROMPT,
+  AUDIO_BRIEF_SYSTEM_PROMPTS,
   buildAudioBriefUserMessage,
   sanitizeUserLabel,
 } from "@/lib/prompts";
+
+export const maxDuration = 60;
 
 const SCRIPT_MAX_CHARS = 4096;
 
@@ -20,13 +22,16 @@ export async function POST(req: NextRequest) {
   const headline = ((body.headline as string) ?? "").slice(0, 200);
   const content  = ((body.content  as string) ?? "").slice(0, 3000);
   const diff     = ((body.diff     as string) ?? "").slice(0, 1000);
+  const tone     = (body.tone as string) ?? "news_reporter";
 
   if (!label || !content) return new Response("Bad request", { status: 400 });
+
+  const systemPrompt = AUDIO_BRIEF_SYSTEM_PROMPTS[tone] ?? AUDIO_BRIEF_SYSTEM_PROMPTS["news_reporter"];
 
   const scriptRes = await openai.chat.completions.create({
     model: AUDIO_BRIEF_MODEL,
     messages: [
-      { role: "system", content: AUDIO_BRIEF_SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user",   content: buildAudioBriefUserMessage(label, headline, content, diff) },
     ],
   });

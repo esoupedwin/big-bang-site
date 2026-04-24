@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { awardAchievementAction } from "@/app/actions/achievements";
+import type { Achievement } from "@/lib/achievements";
+import { AchievementToast } from "./AchievementToast";
 
 type PlayerState = "idle" | "loading" | "playing" | "paused";
 
@@ -10,10 +13,12 @@ const STEP_LABELS = [
 ];
 
 type Props = {
-  label:    string;
-  headline: string | null;
-  content:  string;
-  diff:     string | null;
+  label:        string;
+  headline:     string | null;
+  content:      string;
+  diff:         string | null;
+  voiceGender:  string;
+  voiceTone:    string;
 };
 
 function HeadphonesIcon() {
@@ -51,11 +56,14 @@ function StopIcon() {
   );
 }
 
-export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
-  const [state,      setState]      = useState<PlayerState>("idle");
-  const [stepLabel,  setStepLabel]  = useState(STEP_LABELS[0]);
-  const [progress,   setProgress]   = useState(0);
-  const [error,      setError]      = useState("");
+export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, voiceTone }: Props) {
+  const [state,          setState]          = useState<PlayerState>("idle");
+  const [stepLabel,      setStepLabel]      = useState(STEP_LABELS[0]);
+  const [progress,       setProgress]       = useState(0);
+  const [currentTime,    setCurrentTime]    = useState(0);
+  const [duration,       setDuration]       = useState(0);
+  const [error,          setError]          = useState("");
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef   = useRef<string | null>(null);
@@ -68,6 +76,12 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
     };
   }, []);
 
+  function formatTime(s: number) {
+    const m = Math.floor(s / 60);
+    const ss = Math.floor(s % 60);
+    return `${m}:${ss.toString().padStart(2, "0")}`;
+  }
+
   function cleanup() {
     audioRef.current?.pause();
     audioRef.current = null;
@@ -76,12 +90,58 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       urlRef.current = null;
     }
     setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+  }
+
+  function attachHandlers(audio: HTMLAudioElement) {
+    audio.onplaying = () => setState("playing");
+    audio.onloadedmetadata = () => setDuration(audio.duration);
+    audio.ontimeupdate = () => {
+      if (audio.duration) {
+        setProgress(audio.currentTime / audio.duration);
+        setCurrentTime(audio.currentTime);
+      }
+    };
+    audio.onended = () => {
+      audioRef.current = null;
+      setProgress(0);
+      setCurrentTime(0);
+      setState("idle");
+      awardAchievementAction("disc_jockey").then((earned) => {
+        if (earned) setNewAchievement(earned);
+      });
+    };
+    audio.onerror = () => {
+      cleanup();
+      setError("Playback error.");
+      setState("idle");
+    };
   }
 
   async function handlePlay() {
     setError("");
+
+    // Replay from cached blob — no re-fetch needed
+    if (urlRef.current) {
+      const audio = new Audio(urlRef.current);
+      audioRef.current = audio;
+      attachHandlers(audio);
+      audio.play().catch(() => { setError("Playback error."); setState("idle"); });
+      setState("playing");
+      return;
+    }
+
     setStepLabel(STEP_LABELS[0]);
     setState("loading");
+
+    // Unlock audio synchronously within the user gesture — mobile browsers
+    // (iOS Safari, Android Chrome) block play() called after any async gap.
+    const audio = new Audio();
+    audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+    audio.volume = 0;
+    audio.play().catch(() => {});
+    audioRef.current = audio;
 
     try {
       // Step 1: generate spoken script
@@ -93,6 +153,7 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
           headline: headline ?? "",
           content,
           diff: diff ?? "",
+          tone: voiceTone,
         }),
       });
 
@@ -104,7 +165,7 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       const ttsRes = await fetch("/api/audio-brief/tts", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ script }),
+        body:    JSON.stringify({ script, gender: voiceGender }),
       });
 
       if (!ttsRes.ok) throw new Error("Failed to generate audio.");
@@ -113,22 +174,13 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       const url  = URL.createObjectURL(blob);
       urlRef.current = url;
 
-      const audio = new Audio(url);
-      audioRef.current = audio;
+      // Reuse the already-unlocked element with the real audio source
+      audio.pause();
+      audio.volume = 1;
+      audio.src = url;
+      audio.load();
 
-      audio.onplaying = () => setState("playing");
-      audio.ontimeupdate = () => {
-        if (audio.duration) setProgress(audio.currentTime / audio.duration);
-      };
-      audio.onended = () => {
-        cleanup();
-        setState("idle");
-      };
-      audio.onerror = () => {
-        cleanup();
-        setError("Playback error.");
-        setState("idle");
-      };
+      attachHandlers(audio);
 
       audio.play().catch(() => {
         cleanup();
@@ -159,6 +211,12 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
+      {newAchievement && (
+        <AchievementToast
+          achievement={newAchievement}
+          onDismiss={() => setNewAchievement(null)}
+        />
+      )}
       <div className="flex items-center gap-3">
         {/* Play / loading button */}
         {state === "idle" && (
@@ -205,6 +263,11 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
                 style={{ width: `${Math.round(progress * 100)}%` }}
               />
             </div>
+
+            {/* Playback time */}
+            <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500 shrink-0">
+              {formatTime(currentTime)}{duration > 0 ? ` / ${formatTime(duration)}` : ""}
+            </span>
           </>
         )}
       </div>

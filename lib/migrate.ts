@@ -41,6 +41,16 @@ export async function runMigrations(): Promise<void> {
       ADD COLUMN IF NOT EXISTS coachmark_done BOOLEAN NOT NULL DEFAULT FALSE
   `;
 
+  await sql`
+    ALTER TABLE user_preferences
+      ADD COLUMN IF NOT EXISTS audio_brief_voice_gender TEXT NOT NULL DEFAULT 'male'
+  `;
+
+  await sql`
+    ALTER TABLE user_preferences
+      ADD COLUMN IF NOT EXISTS audio_brief_voice_tone TEXT NOT NULL DEFAULT 'news_reporter'
+  `;
+
   // Backfill priorities for rows seeded from defaults before this column existed.
   // Only touches rows where priorities IS NULL and the label matches a default topic.
   for (const t of BRIEF_TOPICS) {

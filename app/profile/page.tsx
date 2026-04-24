@@ -4,6 +4,7 @@ import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { getUserPreferences, type Theme } from "@/lib/preferences";
 import { saveTheme } from "@/app/actions/preferences";
+import { AudioBriefSettings } from "@/app/components/AudioBriefSettings";
 
 const THEMES: { value: Theme; label: string; description: string }[] = [
   { value: "light", label: "Light", description: "Always light" },
@@ -80,6 +81,19 @@ export default async function ProfilePage() {
               </div>
             </div>
           </div>
+        </section>
+
+        <hr className="border-zinc-200 dark:border-zinc-800" />
+
+        {/* Audio Brief */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-4">
+            Audio Brief
+          </h2>
+          <AudioBriefSettings
+            initialGender={prefs.audio_brief_voice_gender}
+            initialTone={prefs.audio_brief_voice_tone}
+          />
         </section>
 
         <hr className="border-zinc-200 dark:border-zinc-800" />
