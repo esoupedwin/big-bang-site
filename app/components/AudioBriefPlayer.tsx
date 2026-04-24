@@ -116,6 +116,7 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
       const audio = new Audio(url);
       audioRef.current = audio;
 
+      audio.onplaying = () => setState("playing");
       audio.ontimeupdate = () => {
         if (audio.duration) setProgress(audio.currentTime / audio.duration);
       };
@@ -129,8 +130,11 @@ export function AudioBriefPlayer({ label, headline, content, diff }: Props) {
         setState("idle");
       };
 
-      await audio.play();
-      setState("playing");
+      audio.play().catch(() => {
+        cleanup();
+        setError("Could not start playback. Please try again.");
+        setState("idle");
+      });
     } catch {
       cleanup();
       setError("Could not generate audio. Please try again.");
