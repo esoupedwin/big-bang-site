@@ -11,6 +11,8 @@ const SYSTEM_PROMPT =
   "Explain in 2–4 clear sentences: what the term/entity/concept is, the essential background a general reader needs, and why it matters in the current geopolitical context. " +
   "Rules: write in plain, accessible prose; spell out acronyms on first use; stay under 90 words; no bullet points or markdown formatting.";
 
+const TIMEOUT_MS = 20_000;
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return new Response("Unauthorized", { status: 401 });
@@ -22,11 +24,18 @@ export async function POST(req: NextRequest) {
   if (!term) return new Response("Bad request", { status: 400 });
 
   try {
-    const response = await openai.responses.create({
-      model: EXPLAIN_MODEL,
-      tools: [{ type: "web_search" as "web_search_preview" }],
-      input: `User selected this term from a geopolitical brief: "${term}"\n\nBrief context:\n${context}\n\n${SYSTEM_PROMPT}`,
-    });
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("explain timed out")), TIMEOUT_MS)
+    );
+
+    const response = await Promise.race([
+      openai.responses.create({
+        model: EXPLAIN_MODEL,
+        tools: [{ type: "web_search_preview" }],
+        input: `User selected this term from a geopolitical brief: "${term}"\n\nBrief context:\n${context}\n\n${SYSTEM_PROMPT}`,
+      }),
+      timeout,
+    ]);
 
     const explanation = response.output_text ?? "";
 
