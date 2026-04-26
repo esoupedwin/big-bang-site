@@ -88,10 +88,11 @@ export function ExplainPopover({ contentRef, context }: Props) {
 
   // ── Explain handler ──────────────────────────────────────────────────────
   async function handleExplain() {
+    // onPointerDown already moved phase to "loading"; only proceed from there.
+    // Guards against the click firing twice or arriving in the wrong state.
+    if (phaseRef.current !== "loading") return;
     const term = capturedTerm.current;
     if (!term) return;
-
-    syncPhase("loading");
 
     try {
       const res = await fetch("/api/explain", {
@@ -133,10 +134,9 @@ export function ExplainPopover({ contentRef, context }: Props) {
           // onPointerDown fires before selectionchange collapses the selection,
           // locking phase to "loading" so the handler ignores the collapse.
           onPointerDown={() => {
-            if (phase === "button") syncPhase("loading");
+            if (phaseRef.current === "button") syncPhase("loading");
           }}
           onClick={handleExplain}
-          disabled={phase === "loading"}
           style={{ position: "fixed", left: buttonPos.left, top: buttonPos.top, zIndex: 60 }}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg transition-all select-none ${
             phase === "error"
@@ -162,7 +162,7 @@ export function ExplainPopover({ contentRef, context }: Props) {
         </button>
       )}
 
-      {/* ── Result bottom sheet ────────────────────────────────────────── */}
+      {/* ── Result panel — bottom sheet on mobile, right drawer on desktop ── */}
       {phase === "result" && (
         <>
           {/* Scrim */}
@@ -171,15 +171,19 @@ export function ExplainPopover({ contentRef, context }: Props) {
             onClick={dismiss}
           />
 
-          {/* Sheet */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-2xl shadow-2xl flex flex-col max-h-[55vh]">
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1 shrink-0">
+          {/* Panel */}
+          <div className={`
+            fixed z-50 bg-white dark:bg-zinc-900 shadow-2xl flex flex-col
+            bottom-0 left-0 right-0 rounded-t-2xl max-h-[55vh]
+            md:bottom-auto md:top-0 md:left-auto md:right-0 md:rounded-none md:rounded-l-2xl md:h-full md:w-96 md:max-h-none
+          `}>
+            {/* Mobile drag handle */}
+            <div className="flex justify-center pt-3 pb-1 shrink-0 md:hidden">
               <div className="w-10 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" />
             </div>
 
             {/* Header */}
-            <div className="flex items-start gap-3 px-5 pt-3 pb-3 shrink-0 border-b border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-start gap-3 px-5 pt-4 pb-3 shrink-0 border-b border-zinc-100 dark:border-zinc-800 md:pt-6">
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-0.5">
                   Explaining

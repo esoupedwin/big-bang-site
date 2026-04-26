@@ -14,19 +14,27 @@ const SYSTEM_PROMPT =
 const TIMEOUT_MS = 20_000;
 
 export async function POST(req: NextRequest) {
+  console.log("[explain] 1 — handler entered");
   const session = await auth();
+  console.log("[explain] 2 — auth done, session:", !!session);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
   const body    = await req.json().catch(() => ({}));
   const term    = ((body.term    as string) ?? "").slice(0, 300).trim();
   const context = ((body.context as string) ?? "").slice(0, 2000);
+  console.log("[explain] 3 — term:", term.slice(0, 40));
 
   if (!term) return new Response("Bad request", { status: 400 });
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => {
+    console.log("[explain] ⏱ timeout fired — aborting");
+    controller.abort();
+  }, TIMEOUT_MS);
 
   try {
+    console.log("[explain] 4 — calling responses.create");
+    const t0 = Date.now();
     const response = await openai.responses.create(
       {
         model: EXPLAIN_MODEL,
@@ -42,6 +50,7 @@ export async function POST(req: NextRequest) {
     );
 
     clearTimeout(timer);
+    console.log("[explain] 5 — response in", Date.now() - t0, "ms");
 
     const explanation = response.output_text ?? "";
 
@@ -66,8 +75,9 @@ export async function POST(req: NextRequest) {
     }
 
     return Response.json({ explanation, sources });
-  } catch {
+  } catch (err) {
     clearTimeout(timer);
+    console.error("[explain] ✗ caught:", (err as Error)?.message ?? err);
     return new Response("Explain failed", { status: 500 });
   }
 }

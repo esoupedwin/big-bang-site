@@ -21,6 +21,9 @@ export function BriefHistoryDrawer({ isOpen, onClose, topicKey }: Props) {
   const [entries,    setEntries]    = useState<HistoryEntry[]>([]);
   const [loading,    setLoading]    = useState(false);
   const [expanded,   setExpanded]   = useState<number | null>(null);
+  const [mounted,    setMounted]    = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -156,7 +159,6 @@ export function BriefHistoryDrawer({ isOpen, onClose, topicKey }: Props) {
     </>
   );
 
-  return typeof document !== "undefined"
-    ? createPortal(drawer, document.body)
-    : null;
+  if (!mounted) return null;
+  return createPortal(drawer, document.body);
 }

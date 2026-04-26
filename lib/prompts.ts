@@ -6,7 +6,7 @@ export const PRIORITIES_MODEL       = "gpt-5.4-nano";
 export const ANALYTICAL_TAKE_MODEL  = "gpt-5.4-mini";
 export const AUDIO_BRIEF_MODEL      = "gpt-5.4-mini";
 export const AUDIO_BRIEF_TTS_MODEL  = "tts-1";
-export const EXPLAIN_MODEL          = "gpt-5.4-nano";
+export const EXPLAIN_MODEL          = "gpt-5.4-mini";
 export const AUDIO_BRIEF_TTS_VOICE  = "onyx"; // default; overridden by user gender preference
 
 export const AUDIO_BRIEF_TTS_VOICES = {
