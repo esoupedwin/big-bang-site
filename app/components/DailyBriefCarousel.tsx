@@ -84,6 +84,9 @@ export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voice
     };
 
     const onNativeTouchMove = (e: TouchEvent) => {
+      // Selection handle drag — let the browser update the selection freely
+      if (document.getSelection()?.type === "Range") return;
+
       const slide = container.children[indexRef.current] as HTMLElement | undefined;
       if (!slide) return;
       const dy = e.touches[0].clientY - nativeStartY;
@@ -113,6 +116,9 @@ export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voice
 
   // ── Touch handlers ────────────────────────────────────────────────────────
   function onTouchStart(e: React.TouchEvent) {
+    // If text is selected the user may be dragging a selection handle — don't initialise carousel
+    if (document.getSelection()?.type === "Range") return;
+
     const t         = e.touches[0];
     touchStartX.current = t.clientX;
     touchStartY.current = t.clientY;
