@@ -23,23 +23,28 @@ export async function POST(req: NextRequest) {
 
   if (!term) return new Response("Bad request", { status: 400 });
 
-  try {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("explain timed out")), TIMEOUT_MS)
-    );
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    const response = await Promise.race([
-      openai.responses.create({
+  try {
+    const response = await openai.responses.create(
+      {
         model: EXPLAIN_MODEL,
         tools: [{ type: "web_search_preview" }],
-        input: `User selected this term from a geopolitical brief: "${term}"\n\nBrief context:\n${context}\n\n${SYSTEM_PROMPT}`,
-      }),
-      timeout,
-    ]);
+        input: [
+          {
+            role: "user",
+            content: `${SYSTEM_PROMPT}\n\nUser selected this term from a geopolitical brief: "${term}"\n\nBrief context:\n${context}`,
+          },
+        ],
+      },
+      { signal: controller.signal },
+    );
+
+    clearTimeout(timer);
 
     const explanation = response.output_text ?? "";
 
-    // Extract URL citations from output annotations
     const sources: { title: string; url: string }[] = [];
     try {
       for (const item of response.output) {
@@ -62,6 +67,7 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ explanation, sources });
   } catch {
+    clearTimeout(timer);
     return new Response("Explain failed", { status: 500 });
   }
 }
