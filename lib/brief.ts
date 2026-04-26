@@ -200,6 +200,30 @@ export async function appendDailyBriefHistory(
   `;
 }
 
+export async function getLatestAudioScript(topicKey: string): Promise<string | null> {
+  const rows = await sql`
+    SELECT audio_script
+    FROM   daily_brief_history
+    WHERE  topic_key = ${topicKey}
+    ORDER BY generated_at DESC
+    LIMIT 1
+  `;
+  return (rows[0]?.audio_script as string | null) ?? null;
+}
+
+export async function saveAudioScript(topicKey: string, script: string): Promise<void> {
+  await sql`
+    UPDATE daily_brief_history
+    SET    audio_script = ${script}
+    WHERE  id = (
+      SELECT id FROM daily_brief_history
+      WHERE  topic_key = ${topicKey}
+      ORDER  BY generated_at DESC
+      LIMIT  1
+    )
+  `;
+}
+
 export function isCacheValid(cache: DailyBriefCache, currentIds: string[]): boolean {
   // Valid as long as no new articles have appeared since the last generation.
   // Articles ageing out of the 24h rolling window do not require regeneration.

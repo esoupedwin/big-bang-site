@@ -51,6 +51,11 @@ export async function runMigrations(): Promise<void> {
       ADD COLUMN IF NOT EXISTS audio_brief_voice_tone TEXT NOT NULL DEFAULT 'news_reporter'
   `;
 
+  await sql`
+    ALTER TABLE daily_brief_history
+      ADD COLUMN IF NOT EXISTS audio_script TEXT
+  `;
+
   // Backfill priorities for rows seeded from defaults before this column existed.
   // Only touches rows where priorities IS NULL and the label matches a default topic.
   for (const t of BRIEF_TOPICS) {

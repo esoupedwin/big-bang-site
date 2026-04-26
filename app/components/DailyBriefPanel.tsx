@@ -294,6 +294,7 @@ export function DailyBriefPanel({
       {/* Audio Brief — shown as soon as content is available */}
       {!isAnimating && content && (
         <AudioBriefPlayer
+          topicKey={topicKey}
           label={label}
           headline={headline}
           content={content}

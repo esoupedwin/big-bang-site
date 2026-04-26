@@ -5,7 +5,7 @@ import { awardAchievementAction } from "@/app/actions/achievements";
 import type { Achievement } from "@/lib/achievements";
 import { AchievementToast } from "./AchievementToast";
 
-type PlayerState = "idle" | "loading" | "playing" | "paused";
+type PlayerState = "idle" | "loading" | "playing" | "paused" | "done";
 
 const STEP_LABELS = [
   "Step 1 of 2 — Generating script…",
@@ -13,6 +13,7 @@ const STEP_LABELS = [
 ];
 
 type Props = {
+  topicKey:     string;
   label:        string;
   headline:     string | null;
   content:      string;
@@ -56,7 +57,15 @@ function StopIcon() {
   );
 }
 
-export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, voiceTone }: Props) {
+function ReplayIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+    </svg>
+  );
+}
+
+export function AudioBriefPlayer({ topicKey, label, headline, content, diff, voiceGender, voiceTone }: Props) {
   const [state,          setState]          = useState<PlayerState>("idle");
   const [stepLabel,      setStepLabel]      = useState(STEP_LABELS[0]);
   const [progress,       setProgress]       = useState(0);
@@ -65,8 +74,25 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
   const [error,          setError]          = useState("");
   const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef   = useRef<string | null>(null);
+  const audioRef       = useRef<HTMLAudioElement | null>(null);
+  const urlRef         = useRef<string | null>(null);
+  const prevContentRef = useRef(content);
+
+  // Reset player when the brief content changes (new generation)
+  useEffect(() => {
+    if (content === prevContentRef.current) return;
+    prevContentRef.current = content;
+    audioRef.current?.pause();
+    audioRef.current = null;
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
+    setState("idle");
+    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+  }, [content]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -105,9 +131,8 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
     };
     audio.onended = () => {
       audioRef.current = null;
-      setProgress(0);
-      setCurrentTime(0);
-      setState("idle");
+      setProgress(1);
+      setState("done");
       awardAchievementAction("disc_jockey").then((earned) => {
         if (earned) setNewAchievement(earned);
       });
@@ -119,24 +144,25 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
     };
   }
 
+  function playFromCache() {
+    if (!urlRef.current) return false;
+    const audio = new Audio(urlRef.current);
+    audioRef.current = audio;
+    attachHandlers(audio);
+    audio.play().catch(() => { setError("Playback error."); setState("idle"); });
+    setState("playing");
+    return true;
+  }
+
   async function handlePlay() {
     setError("");
-
-    // Replay from cached blob — no re-fetch needed
-    if (urlRef.current) {
-      const audio = new Audio(urlRef.current);
-      audioRef.current = audio;
-      attachHandlers(audio);
-      audio.play().catch(() => { setError("Playback error."); setState("idle"); });
-      setState("playing");
-      return;
-    }
+    if (playFromCache()) return;
 
     setStepLabel(STEP_LABELS[0]);
     setState("loading");
 
     // Unlock audio synchronously within the user gesture — mobile browsers
-    // (iOS Safari, Android Chrome) block play() called after any async gap.
+    // block play() called after any async gap.
     const audio = new Audio();
     audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
     audio.volume = 0;
@@ -144,11 +170,12 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
     audioRef.current = audio;
 
     try {
-      // Step 1: generate spoken script
+      // Step 1: generate (or fetch cached) spoken script
       const scriptRes = await fetch("/api/audio-brief/script", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
+          topicKey,
           label,
           headline: headline ?? "",
           content,
@@ -174,7 +201,6 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
       const url  = URL.createObjectURL(blob);
       urlRef.current = url;
 
-      // Reuse the already-unlocked element with the real audio source
       audio.pause();
       audio.volume = 1;
       audio.src = url;
@@ -209,6 +235,13 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
     setState("idle");
   }
 
+  function handleReplay() {
+    setError("");
+    setProgress(0);
+    setCurrentTime(0);
+    playFromCache();
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {newAchievement && (
@@ -218,7 +251,7 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
         />
       )}
       <div className="flex items-center gap-3">
-        {/* Play / loading button */}
+        {/* Idle — first play */}
         {state === "idle" && (
           <button
             onClick={handlePlay}
@@ -229,6 +262,7 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
           </button>
         )}
 
+        {/* Loading */}
         {state === "loading" && (
           <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-400 dark:text-zinc-500">
             <span className="inline-block w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin shrink-0" />
@@ -236,9 +270,9 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
           </div>
         )}
 
+        {/* Playing / paused */}
         {(state === "playing" || state === "paused") && (
           <>
-            {/* Pause / Resume */}
             <button
               onClick={state === "playing" ? handlePause : handleResume}
               className="flex items-center justify-center w-9 h-9 rounded-full bg-zinc-800 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-100 transition-colors"
@@ -247,7 +281,6 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
               {state === "playing" ? <PauseIcon /> : <PlayIcon />}
             </button>
 
-            {/* Stop */}
             <button
               onClick={handleStop}
               className="flex items-center justify-center w-7 h-7 rounded-full border border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-500 dark:hover:border-zinc-400 transition-colors"
@@ -256,7 +289,6 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
               <StopIcon />
             </button>
 
-            {/* Progress bar */}
             <div className="flex-1 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
               <div
                 className="h-full bg-zinc-600 dark:bg-zinc-400 rounded-full transition-all duration-300"
@@ -264,10 +296,27 @@ export function AudioBriefPlayer({ label, headline, content, diff, voiceGender, 
               />
             </div>
 
-            {/* Playback time */}
             <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500 shrink-0">
               {formatTime(currentTime)}{duration > 0 ? ` / ${formatTime(duration)}` : ""}
             </span>
+          </>
+        )}
+
+        {/* Done — replay from cache */}
+        {state === "done" && (
+          <>
+            <button
+              onClick={handleReplay}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-500 dark:hover:border-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            >
+              <ReplayIcon />
+              Replay Brief
+            </button>
+            {duration > 0 && (
+              <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
+                {formatTime(duration)}
+              </span>
+            )}
           </>
         )}
       </div>
