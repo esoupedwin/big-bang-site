@@ -231,8 +231,12 @@ export function AudioBriefPlayer({ topicKey, label, headline, content, diff, voi
   }
 
   function handleStop() {
-    cleanup();
-    setState("idle");
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setProgress(0);
+    setCurrentTime(0);
+    // Keep urlRef.current so Replay Brief still works
+    setState("done");
   }
 
   function handleReplay() {
