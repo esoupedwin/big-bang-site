@@ -126,6 +126,9 @@ export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voice
   function onTouchMove(e: React.TouchEvent) {
     if (touchStartX.current === null || touchStartY.current === null) return;
 
+    // User is dragging to extend a text selection — don't hijack for carousel
+    if (document.getSelection()?.type === "Range") return;
+
     const t   = e.touches[0];
     const dx  = t.clientX - touchStartX.current;
     const dy  = t.clientY - touchStartY.current;
