@@ -5,11 +5,16 @@ import { EXPLAIN_MODEL } from "@/lib/prompts";
 
 export const maxDuration = 30;
 
-const SYSTEM_PROMPT =
-  "You are a knowledgeable educator helping someone understand a term or phrase from a geopolitical brief. " +
-  "Use web search to retrieve current, accurate information. " +
-  "Explain in 2–4 clear sentences: what the term/entity/concept is, the essential background a general reader needs, and why it matters in the current geopolitical context. " +
-  "Rules: write in plain, accessible prose; spell out acronyms on first use; stay under 90 words; no bullet points or markdown formatting.";
+function buildPrompt(term: string, context: string, label: string): string {
+  return `You are a knowledgeable educator helping someone understand a term or phrase from a geopolitical brief. ` +
+    `The user is following the coverage topic: "${label}". ` +
+    `Use web search to retrieve current, accurate information. ` +
+    `Explain in 3–5 clear sentences: (1) what the term/entity/concept is and its essential background, ` +
+    `(2) why it matters specifically in the context of "${label}". ` +
+    `Rules: write in plain, accessible prose; spell out acronyms on first use; stay under 110 words; no bullet points or markdown formatting.\n\n` +
+    `User selected: "${term}"\n\n` +
+    `Brief context:\n${context}`;
+}
 
 const TIMEOUT_MS = 20_000;
 
@@ -22,6 +27,7 @@ export async function POST(req: NextRequest) {
   const body    = await req.json().catch(() => ({}));
   const term    = ((body.term    as string) ?? "").slice(0, 300).trim();
   const context = ((body.context as string) ?? "").slice(0, 2000);
+  const label   = ((body.label   as string) ?? "").slice(0, 150).trim();
   console.log("[explain] 3 — term:", term.slice(0, 40));
 
   if (!term) return new Response("Bad request", { status: 400 });
@@ -39,12 +45,7 @@ export async function POST(req: NextRequest) {
       {
         model: EXPLAIN_MODEL,
         tools: [{ type: "web_search_preview" }],
-        input: [
-          {
-            role: "user",
-            content: `${SYSTEM_PROMPT}\n\nUser selected this term from a geopolitical brief: "${term}"\n\nBrief context:\n${context}`,
-          },
-        ],
+        input: [{ role: "user", content: buildPrompt(term, context, label) }],
       },
       { signal: controller.signal },
     );

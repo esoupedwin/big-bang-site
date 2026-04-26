@@ -13,9 +13,10 @@ interface Source {
 interface Props {
   contentRef: React.RefObject<HTMLDivElement | null>;
   context:    string;
+  label:      string;
 }
 
-export function ExplainPopover({ contentRef, context }: Props) {
+export function ExplainPopover({ contentRef, context, label }: Props) {
   const [phase,       setPhase]       = useState<Phase>("hidden");
   const [buttonPos,   setButtonPos]   = useState<{ left: number; top: number } | null>(null);
   const [explanation, setExplanation] = useState("");
@@ -98,7 +99,7 @@ export function ExplainPopover({ contentRef, context }: Props) {
       const res = await fetch("/api/explain", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ term, context }),
+        body:    JSON.stringify({ term, context, label }),
       });
       if (!res.ok) throw new Error("explain failed");
       const data = await res.json();

@@ -288,6 +288,7 @@ export function DailyBriefPanel({
     <ExplainPopover
       contentRef={contentRef}
       context={[content, diff].filter(Boolean).join("\n\n")}
+      label={label}
     />
     <div ref={contentRef} className="mt-2 space-y-6">
       {/* Audio Brief — shown as soon as content is available */}
