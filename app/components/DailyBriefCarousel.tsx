@@ -43,13 +43,25 @@ export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voice
   const totalSlides = slides.length + 1;
 
   // ── All touch state in refs — zero re-renders during drag ─────────────────
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const lastX       = useRef(0);
-  const lastTime    = useRef(0);
-  const velocity    = useRef(0);
-  const dragX       = useRef(0);
-  const dirLock     = useRef<"h" | "v" | null>(null);
+  const touchStartX        = useRef<number | null>(null);
+  const touchStartY        = useRef<number | null>(null);
+  const lastX              = useRef(0);
+  const lastTime           = useRef(0);
+  const velocity           = useRef(0);
+  const dragX              = useRef(0);
+  const dirLock            = useRef<"h" | "v" | null>(null);
+  const hasRangeSelection  = useRef(false);
+
+  // Track selection state continuously — getSelection() can briefly return
+  // "Caret" at touchstart when the user taps a handle (before the drag begins),
+  // so we rely on this ref rather than a point-in-time check.
+  useEffect(() => {
+    const onSelectionChange = () => {
+      hasRangeSelection.current = document.getSelection()?.type === "Range";
+    };
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => document.removeEventListener("selectionchange", onSelectionChange);
+  }, []);
 
   // ── Direct DOM transform — bypasses React render cycle ────────────────────
   function applyTransforms(dx: number, animated: boolean) {
@@ -85,7 +97,7 @@ export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voice
 
     const onNativeTouchMove = (e: TouchEvent) => {
       // Selection handle drag — let the browser update the selection freely
-      if (document.getSelection()?.type === "Range") return;
+      if (hasRangeSelection.current || document.getSelection()?.type === "Range") return;
 
       const slide = container.children[indexRef.current] as HTMLElement | undefined;
       if (!slide) return;
@@ -117,7 +129,7 @@ export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voice
   // ── Touch handlers ────────────────────────────────────────────────────────
   function onTouchStart(e: React.TouchEvent) {
     // If text is selected the user may be dragging a selection handle — don't initialise carousel
-    if (document.getSelection()?.type === "Range") return;
+    if (hasRangeSelection.current || document.getSelection()?.type === "Range") return;
 
     const t         = e.touches[0];
     touchStartX.current = t.clientX;
@@ -133,7 +145,7 @@ export function DailyBriefCarousel({ slides, initialTopicKey, voiceGender, voice
     if (touchStartX.current === null || touchStartY.current === null) return;
 
     // User is dragging to extend a text selection — don't hijack for carousel
-    if (document.getSelection()?.type === "Range") return;
+    if (hasRangeSelection.current || document.getSelection()?.type === "Range") return;
 
     const t   = e.touches[0];
     const dx  = t.clientX - touchStartX.current;
