@@ -6,9 +6,10 @@ import { EXPLAIN_MODEL } from "@/lib/prompts";
 export const maxDuration = 30;
 
 const SYSTEM_PROMPT =
-  "You are a concise intelligence analyst. The user has highlighted a term or phrase from a geopolitical brief and wants a quick explanation. " +
-  "In 2–4 sentences explain: what the term/entity/concept is, why it matters in the current context, and any essential background a general reader needs. " +
-  "Rules: write in clear flowing prose; spell out acronyms on first use; stay under 80 words; no bullet points or markdown.";
+  "You are a knowledgeable educator helping someone understand a term or phrase from a geopolitical brief. " +
+  "Use web search to retrieve current, accurate information. " +
+  "Explain in 2–4 clear sentences: what the term/entity/concept is, the essential background a general reader needs, and why it matters in the current geopolitical context. " +
+  "Rules: write in plain, accessible prose; spell out acronyms on first use; stay under 90 words; no bullet points or markdown formatting.";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -21,21 +22,36 @@ export async function POST(req: NextRequest) {
   if (!term) return new Response("Bad request", { status: 400 });
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await openai.responses.create({
       model: EXPLAIN_MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `User selected: "${term}"\n\nBrief context:\n${context}`,
-        },
-      ],
-      max_tokens: 150,
-      temperature: 0.3,
+      tools: [{ type: "web_search" as "web_search_preview" }],
+      input: `User selected this term from a geopolitical brief: "${term}"\n\nBrief context:\n${context}\n\n${SYSTEM_PROMPT}`,
     });
 
-    const explanation = response.choices[0]?.message?.content?.trim() ?? "";
-    return Response.json({ explanation, sources: [] });
+    const explanation = response.output_text ?? "";
+
+    // Extract URL citations from output annotations
+    const sources: { title: string; url: string }[] = [];
+    try {
+      for (const item of response.output) {
+        if ((item as { type: string }).type !== "message") continue;
+        const content = (item as { content?: unknown[] }).content ?? [];
+        for (const part of content) {
+          if ((part as { type: string }).type !== "output_text") continue;
+          const annotations = (part as { annotations?: unknown[] }).annotations ?? [];
+          for (const ann of annotations) {
+            const a = ann as { type: string; url?: string; title?: string };
+            if (a.type === "url_citation" && a.url && !sources.some((s) => s.url === a.url)) {
+              sources.push({ title: a.title ?? a.url, url: a.url });
+            }
+          }
+        }
+      }
+    } catch {
+      // Sources are optional
+    }
+
+    return Response.json({ explanation, sources });
   } catch {
     return new Response("Explain failed", { status: 500 });
   }

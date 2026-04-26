@@ -5,6 +5,11 @@ import { useEffect, useRef, useState } from "react";
 
 type Phase = "hidden" | "button" | "loading" | "result" | "error";
 
+interface Source {
+  title: string;
+  url:   string;
+}
+
 interface Props {
   contentRef: React.RefObject<HTMLDivElement | null>;
   context:    string;
@@ -14,6 +19,7 @@ export function ExplainPopover({ contentRef, context }: Props) {
   const [phase,       setPhase]       = useState<Phase>("hidden");
   const [buttonPos,   setButtonPos]   = useState<{ left: number; top: number } | null>(null);
   const [explanation, setExplanation] = useState("");
+  const [sources,     setSources]     = useState<Source[]>([]);
   const [mounted,     setMounted]     = useState(false);
 
   // Stable refs used inside event handlers to avoid stale closures
@@ -96,6 +102,7 @@ export function ExplainPopover({ contentRef, context }: Props) {
       if (!res.ok) throw new Error("explain failed");
       const data = await res.json();
       setExplanation(data.explanation ?? "");
+      setSources(data.sources ?? []);
       syncPhase("result");
     } catch {
       syncPhase("error");
@@ -110,6 +117,7 @@ export function ExplainPopover({ contentRef, context }: Props) {
     syncPhase("hidden");
     setButtonPos(null);
     setExplanation("");
+    setSources([]);
     window.getSelection()?.removeAllRanges();
   }
 
@@ -196,6 +204,30 @@ export function ExplainPopover({ contentRef, context }: Props) {
               <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed">
                 {explanation}
               </p>
+
+              {sources.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mb-2">
+                    Sources
+                  </p>
+                  <div className="space-y-1.5">
+                    {sources.slice(0, 3).map((s) => (
+                      <a
+                        key={s.url}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline truncate"
+                      >
+                        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        {s.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </>
