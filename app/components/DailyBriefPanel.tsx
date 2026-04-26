@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { CollapsibleBullet } from "./CollapsibleBullet";
 import { ArticlesDrawer, ArticleRef } from "./ArticlesDrawer";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { AnalyticalTakeSection } from "./AnalyticalTakeSection";
 import { AudioBriefPlayer } from "./AudioBriefPlayer";
+import { ExplainPopover } from "./ExplainPopover";
 
 const UPDATING_TEXT = "Generating latest development...";
 // Each cycle: 35 chars × 50 ms = 1 750 ms typing + 250 ms pause = 2 000 ms total
@@ -87,7 +88,8 @@ export function DailyBriefPanel({
   // Bullets content held until witty headline finishes
   const [pendingBullets, setPendingBullets] = useState<string | null>(null);
 
-  const isAnimating = animWitty !== null || animBullets !== null;
+  const isAnimating  = animWitty !== null || animBullets !== null;
+  const contentRef   = useRef<HTMLDivElement>(null);
 
   // Phase 1: stream witty headline, then hand off to bullet animation
   useEffect(() => {
@@ -283,7 +285,11 @@ export function DailyBriefPanel({
       onClose={() => setIsDrawerOpen(false)}
       articles={articles}
     />
-    <div className="mt-2 space-y-6">
+    <ExplainPopover
+      contentRef={contentRef}
+      context={[content, diff].filter(Boolean).join("\n\n")}
+    />
+    <div ref={contentRef} className="mt-2 space-y-6">
       {/* Audio Brief — shown as soon as content is available */}
       {!isAnimating && content && (
         <AudioBriefPlayer
